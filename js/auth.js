@@ -1,6 +1,6 @@
 import { getFirebase, isFirebaseConfigured } from './firebase-init.js';
 
-let currentUser = null; // { uid, username, coins, wins, losses, draws, color, age, isAnonymous }
+let currentUser = null; // { uid, username, coins, wins, losses, draws, color, isAnonymous }
 let status = 'loading'; // 'loading' | 'signedOut' | 'ready' | 'failed' | 'unconfigured'
 let lastError = '';
 const listeners = [];
@@ -31,7 +31,7 @@ async function loadOrCreateProfile(db, fsMod, user, extra){
   let snap = await fsMod.getDoc(ref);
   if (!snap.exists()){
     await fsMod.setDoc(ref, {
-      username: '', coins: 50, wins: 0, losses: 0, draws: 0, color: '#2f6fe0', age: null,
+      username: '', coins: 50, wins: 0, losses: 0, draws: 0, color: '#2f6fe0',
       createdAt: Date.now(), ...extra,
     });
     snap = await fsMod.getDoc(ref);
@@ -79,7 +79,7 @@ export async function continueAsGuest(){
 
 // Crea una cuenta con nombre+PIN. Si ya estabas jugando de invitado, la cuenta nueva
 // hereda tu equipo/coleccion de invitado en vez de arrancar de cero.
-export async function signUp(name, pin, age){
+export async function signUp(name, pin){
   const fb = await getFirebase();
   if (!fb) return { ok:false, error:'Firebase no esta disponible.' };
   const username = String(name).trim().slice(0,16);
@@ -96,10 +96,10 @@ export async function signUp(name, pin, age){
       await authMod.createUserWithEmailAndPassword(auth, email, password);
     }
     // el profile se termina de crear/actualizar cuando dispare onAuthStateChanged,
-    // pero le mandamos el nombre y la edad de una para no perderlos.
+    // pero le mandamos el nombre de una para no perderlo.
     const fb2 = await getFirebase();
     const user = fb2.auth.currentUser;
-    currentUser = await loadOrCreateProfile(fb2.db, fb2.fsMod, user, { username, age: age||null });
+    currentUser = await loadOrCreateProfile(fb2.db, fb2.fsMod, user, { username });
     status = 'ready';
     notify();
     return { ok:true };

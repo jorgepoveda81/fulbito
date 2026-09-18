@@ -14,7 +14,6 @@ export function renderAuthGate(container){
         </div>
         <label>Nombre de jugador</label>
         <input type="text" id="authName" maxlength="16" placeholder="Tu nombre">
-        ${mode==='signup' ? `<label>Edad (opcional)</label><input type="number" id="authAge" min="1" max="120" placeholder="Edad">` : ''}
         <label>PIN (4 numeros o mas)</label>
         <input type="password" inputmode="numeric" id="authPin" maxlength="10" placeholder="****">
         <button class="reset-btn" id="authSubmit">${mode==='signup' ? 'Crear cuenta' : 'Iniciar sesion'}</button>
@@ -28,12 +27,11 @@ export function renderAuthGate(container){
     container.querySelector('#authSubmit').onclick = async () => {
       const name = container.querySelector('#authName').value.trim();
       const pin = container.querySelector('#authPin').value.trim();
-      const age = mode==='signup' ? Number(container.querySelector('#authAge').value) || null : null;
       const msg = container.querySelector('#authMsg');
       if (!name){ msg.textContent = 'Ponete un nombre.'; return; }
       if (pin.length < 4){ msg.textContent = 'El PIN necesita al menos 4 numeros.'; return; }
       msg.textContent = 'Un momento...';
-      const result = mode==='signup' ? await signUp(name, pin, age) : await logIn(name, pin);
+      const result = mode==='signup' ? await signUp(name, pin) : await logIn(name, pin);
       if (!result.ok) msg.textContent = result.error;
       // si funciono, onAuthChange en auth.js va a avisar y la pantalla de Inicio se re-dibuja sola
     };

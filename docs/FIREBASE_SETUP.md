@@ -16,7 +16,7 @@ FULBITO usa [Firebase](https://firebase.google.com) para las cuentas y para guar
 
 | Coleccion | Documento | Contenido |
 |---|---|---|
-| `profiles` | uno por usuario (id = su uid) | `username`, `age`, `color`, `coins`, `wins`, `losses`, `draws` |
+| `profiles` | uno por usuario (id = su uid) | `username`, `color`, `coins`, `wins`, `losses`, `draws` |
 | `players` | uno por jugador que el usuario tiene | `ownerId`, `name`, `role`, `skills` (o `gkSkills` si es arquero), `source` (`store`/`custom`/`starter`) |
 | `teams` | uno por usuario (id = su uid) | `roster`: ids de `players` para cada puesto (`keeper`, `def1`, `def2`, `mid1`, `mid2`, `fwd`, `captain`) |
 
