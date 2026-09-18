@@ -4,6 +4,7 @@ import { initAuth, recordMatchResult, getCurrentUser } from './auth.js';
 import { initHomeScreen } from './menu-ui.js';
 import { initTeamScreen, buildRosterOverride } from './team-ui.js';
 import { initStoreScreen } from './store-ui.js';
+import { initSettingsScreen } from './settings-ui.js';
 import { addCareerStats, lookupPublicAccount } from './player-repo.js';
 
 const DEFAULT_COLOR_A = '#2f6fe0';
@@ -17,6 +18,7 @@ const screens = {
   home: document.getElementById('tabHome'),
   team: document.getElementById('tabTeam'),
   store: document.getElementById('tabStore'),
+  settings: document.getElementById('tabSettings'),
 };
 
 tabs.forEach(tab => {
@@ -47,6 +49,31 @@ document.getElementById('backToMenu').onclick = () => {
 initHomeScreen(screens.home, { onPlay: goPlay });
 initTeamScreen(screens.team);
 initStoreScreen(screens.store);
+initSettingsScreen(screens.settings);
+
+// Modo desarrollador oculto: tocar el titulo 5 veces seguidas (en menos de 3s)
+// muestra la pantalla de pruebas para ajustar valores del juego (abajo de la
+// cancha). Los jugadores comunes no la necesitan ni la ven; sus ajustes reales
+// (sonido/vibracion) estan en la pestaña "Ajustes" de arriba.
+(function initDevMode(){
+  const DEV_KEY = 'fulbito_devmode';
+  const title = document.getElementById('appTitle');
+  const devPanel = document.getElementById('devPanel');
+  if (!title || !devPanel) return;
+  if (localStorage.getItem(DEV_KEY) === '1') devPanel.classList.remove('hidden');
+
+  let taps = 0, tapTimer = null;
+  title.addEventListener('click', () => {
+    taps++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => { taps = 0; }, 3000);
+    if (taps >= 5){
+      taps = 0;
+      const nowOn = devPanel.classList.toggle('hidden') === false;
+      try { localStorage.setItem(DEV_KEY, nowOn ? '1' : '0'); } catch(e){}
+    }
+  });
+})();
 
 window.FulbitoGame.onMatchEnd = (result, statsForA) => {
   recordMatchResult(result);

@@ -54,6 +54,7 @@ js/player-creator.js            creador de jugador propio (repartir 11 puntos)
 js/menu-ui.js                   pantalla "Inicio"
 js/team-ui.js                    pantalla "Mi Equipo"
 js/store-ui.js                   pantalla "Tienda"
+js/settings-ui.js               pantalla "Ajustes" (sonido y vibracion, para cualquier jugador)
 firestore.rules                 reglas de seguridad (cada quien solo ve lo suyo)
 manifest.webmanifest            hace que el juego se pueda "instalar" en el celular
 sw.js                            service worker: cachea el cascaron de la app para que abra sin conexion
@@ -78,7 +79,8 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 - Los 10 poderes de la seccion 11, elegidos en secreto antes de cada partido.
 - Modo 1 jugador contra una IA sencilla (para cuando no hay alguien al lado para jugar).
 - Nombres de equipo personalizables, sonido, vibracion en celular, confeti y camara con sacudida en los goles.
-- Pantalla de pruebas para ajustar en vivo los valores que el documento marca como "POR DEFINIR".
+- Pantalla **Ajustes** (sonido/vibracion on-off) para cualquier jugador, separada de la pantalla de pruebas.
+- **Modo desarrollador** oculto: tocar el titulo "FULBITO" 5 veces seguidas muestra la pantalla de pruebas (ajustar en vivo los valores que el documento marca como "POR DEFINIR"). No aparece para un jugador comun.
 
 ## Simplificaciones conocidas (para seguir mejorando)
 

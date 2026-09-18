@@ -16,7 +16,7 @@
 </head>
 <body>
 
-<h1>&#9917; FULBITO</h1>
+<h1 id="appTitle">&#9917; FULBITO</h1>
 <p class="subtitle">Futbolin evolucionado: figuras fijas, auras, capitan movil y arquero. Basado en las reglas Version 1.0.</p>
 
 <div id="appShell">
@@ -24,10 +24,12 @@
     <button class="app-tab active" data-tab="home">&#127968; Inicio</button>
     <button class="app-tab" data-tab="team">&#128101; Mi Equipo</button>
     <button class="app-tab" data-tab="store">&#128722; Tienda</button>
+    <button class="app-tab" data-tab="settings">&#9881;&#65039; Ajustes</button>
   </nav>
   <section id="tabHome" class="app-screen"></section>
   <section id="tabTeam" class="app-screen hidden"></section>
   <section id="tabStore" class="app-screen hidden"></section>
+  <section id="tabSettings" class="app-screen hidden"></section>
 </div>
 
 <div id="gameRoot" class="hidden">
@@ -121,8 +123,8 @@
   </div>
 </div>
 
-<details class="settings">
-  <summary>&#9881;&#65039; Pantalla de pruebas (para ajustar los valores del juego)</summary>
+<details class="settings hidden" id="devPanel">
+  <summary>&#9881;&#65039; Pantalla de pruebas (modo desarrollador, para ajustar los valores del juego)</summary>
   <div class="settings-grid">
     <div class="setting">
       <label>Tamano del aura: <output id="out_aura">55</output> px</label>

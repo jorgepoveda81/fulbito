@@ -44,6 +44,13 @@
 .player-chip b{ display:block; margin-bottom:3px; }
 .player-chip span{ color:var(--sub); font-size:10.5px; }
 
+.setting-toggle{
+  display:flex; align-items:center; gap:10px; font-size:14px; font-weight:700; color:var(--text);
+  padding:10px 0; border-bottom:1px solid #212b2f;
+}
+.setting-toggle:last-of-type{ border-bottom:none; }
+.setting-toggle input{ width:18px; height:18px; accent-color:var(--gold); }
+
 .creator-hint{ color:var(--sub); font-size:12px; margin:0 0 10px; }
 .creator-name{
   width:100%; background:var(--panel2); border:1px solid #2c383d; border-radius:8px; padding:9px 11px;

@@ -225,11 +225,32 @@ function markUsed(team, id){ state.usedPowers[team][id] = true; }
 function teamName(team){ return state.teamNames[team] || `Equipo ${team}`; }
 
 // ============================================================================
+// Preferencias del jugador (sonido/vibracion), guardadas en el celular.
+// Pantalla real en js/settings-ui.js (tab "Ajustes"); se controlan desde ahi
+// via window.FulbitoPrefs, no desde la pantalla de pruebas para desarrolladores.
+// ============================================================================
+const PREFS_KEY = 'fulbito_prefs_v1';
+function loadPrefs(){
+  try {
+    const saved = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+    return { sound: saved.sound !== false, vibration: saved.vibration !== false };
+  } catch(e){ return { sound: true, vibration: true }; }
+}
+const prefs = loadPrefs();
+function savePrefs(){ try{ localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); }catch(e){} }
+window.FulbitoPrefs = {
+  get(){ return { ...prefs }; },
+  setSound(v){ prefs.sound = !!v; savePrefs(); },
+  setVibration(v){ prefs.vibration = !!v; savePrefs(); },
+};
+
+// ============================================================================
 // Sonido (Web Audio, sin archivos) y vibracion en celular
 // ============================================================================
 const audio = (function(){
   let ctxA = null;
   function ensure(){
+    if (!prefs.sound) return null;
     if (!ctxA){
       const AC = window.AudioContext || window.webkitAudioContext;
       if (AC) ctxA = new AC();
@@ -305,6 +326,7 @@ const audio = (function(){
   };
 })();
 function vibrate(pattern){
+  if (!prefs.vibration) return;
   if (navigator.vibrate){ try{ navigator.vibrate(pattern); }catch(e){} }
 }
 
