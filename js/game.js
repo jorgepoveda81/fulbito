@@ -590,7 +590,11 @@ canvas.addEventListener('touchend', e=>{ if (humanInputAllowed()) pointerUp(); e
 // ============================================================================
 // Poderes — botones e interaccion
 // ============================================================================
+// Cache de los botones de poder ya creados, para no tener que volver a buscarlos con
+// querySelectorAll en cada frame (updatePowerButtons corre 60 veces por segundo).
+let powerButtonEls = [];
 function renderPowerButtons(){
+  powerButtonEls = [];
   ['A','B'].forEach(team => {
     const row = document.getElementById(team==='A' ? 'powerRowA' : 'powerRowB');
     row.innerHTML = '';
@@ -602,6 +606,7 @@ function renderPowerButtons(){
       btn.innerHTML = `${p.name}<span class="desc">${p.desc}</span>`;
       btn.onclick = () => activatePower(team, id);
       row.appendChild(btn);
+      powerButtonEls.push(btn);
     });
   });
   updatePowerButtons();
@@ -661,7 +666,7 @@ function activatePower(team, id){
   updatePowerButtons();
 }
 function updatePowerButtons(){
-  document.querySelectorAll('.power-btn').forEach(btn=>{
+  powerButtonEls.forEach(btn=>{
     const team = btn.dataset.team, id = btn.dataset.power;
     const isSilenced = state.silencedNextTurn[team] && state.turnTeam===team;
     let enabled = !state.usedPowers[team][id] && !isSilenced;
@@ -1480,27 +1485,28 @@ function holderLabel(p){
   const who = p.displayName ? p.displayName : (p.isCaptain ? 'El capitan' : (p.isKeeper ? 'El arquero' : `Jugador ${p.jersey}`));
   return `#${p.jersey} ${who}`;
 }
+// Elementos estaticos del HUD, buscados una sola vez (updateHud corre cada frame).
+const hudLabel = document.getElementById('turnLabel');
+const hudDot = document.getElementById('turnDot');
+const hudBar = document.getElementById('turnbar');
+const hudCapInfo = document.getElementById('captainInfo');
 function updateHud(){
-  const label = document.getElementById('turnLabel');
-  const dot = document.getElementById('turnDot');
-  const bar = document.getElementById('turnbar');
-  const capInfo = document.getElementById('captainInfo');
   if (state.phase==='formation'){
-    label.textContent = `Armando la formacion de ${teamName(state.formingTeam)}`;
+    hudLabel.textContent = `Armando la formacion de ${teamName(state.formingTeam)}`;
     updateFormationZoneCounts();
   } else if (state.phase==='ended'){
-    label.textContent='Partido terminado';
+    hudLabel.textContent='Partido terminado';
   } else if (state.penalty){
-    label.textContent = state.penalty.mode==='shootout'
+    hudLabel.textContent = state.penalty.mode==='shootout'
       ? `Penales &middot; ${teamName(state.penalty.kickingTeam)} (${state.penalty.scoreA}-${state.penalty.scoreB})`
       : `Penal &middot; ${teamName(state.penalty.kickingTeam)}`;
   } else {
-    label.textContent = `Turno de ${teamName(state.turnTeam)}` + (state.phase==='flying' ? ' &middot; balon en juego' : '');
+    hudLabel.textContent = `Turno de ${teamName(state.turnTeam)}` + (state.phase==='flying' ? ' &middot; balon en juego' : '');
   }
-  dot.style.background = (state.phase==='formation' ? state.formingTeam : state.turnTeam)==='A' ? 'var(--teamA)' : 'var(--teamB)';
+  hudDot.style.background = (state.phase==='formation' ? state.formingTeam : state.turnTeam)==='A' ? 'var(--teamA)' : 'var(--teamB)';
   const pct = state.phase==='formation' ? 100 : Math.max(0, state.turnTimeLeft/settings.turnSeconds)*100;
-  bar.style.width = pct+'%';
-  capInfo.textContent = state.phase==='formation' ? 'Arrastra los jugadores con borde punteado' :
+  hudBar.style.width = pct+'%';
+  hudCapInfo.textContent = state.phase==='formation' ? 'Arrastra los jugadores con borde punteado' :
     (state.holder ? holderLabel(state.holder) : '-');
   updatePowerButtons();
 }
