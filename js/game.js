@@ -221,7 +221,10 @@ const state = {
   pendingSinglePenalty: null, // {forTeam} — penal por zona fantasma descubierta
 };
 
-function hasPower(team, id){ return state.selectedPowers[team].includes(id) && !state.usedPowers[team][id]; }
+function hasPower(team, id){
+  const isSilenced = state.silencedNextTurn[team] && state.turnTeam===team;
+  return state.selectedPowers[team].includes(id) && !state.usedPowers[team][id] && !isSilenced;
+}
 function markUsed(team, id){ state.usedPowers[team][id] = true; }
 function teamName(team){ return state.teamNames[team] || `Equipo ${team}`; }
 
@@ -686,8 +689,7 @@ function activatePower(team, id){
 function updatePowerButtons(){
   powerButtonEls.forEach(btn=>{
     const team = btn.dataset.team, id = btn.dataset.power;
-    const isSilenced = state.silencedNextTurn[team] && state.turnTeam===team;
-    let enabled = !state.usedPowers[team][id] && !isSilenced;
+    let enabled = hasPower(team, id);
     // reglas de "cuando se puede usar" por poder
     if (id==='tiempo') enabled = enabled && state.turnTeam===team && state.phase==='aiming';
     if (id==='farmear') enabled = enabled && state.passStreak[team]>=2 && !!state.holder && state.holder.team===team;
