@@ -60,6 +60,7 @@ firestore.rules                 reglas de seguridad (cada quien solo ve lo suyo)
 manifest.webmanifest            hace que el juego se pueda "instalar" en el celular
 sw.js                            service worker: cachea el cascaron de la app para que abra sin conexion
 icons/icon.svg                   icono de la app
+icons/icon-maskable.svg          version del icono recortada a la zona segura (Android adaptive icon)
 docs/REGLAS_v1.0.md              las reglas de diseño del juego
 docs/FIREBASE_SETUP.md           como activar cuentas/tienda
 tests/rules-core.test.js         tests de js/rules-core.js (node --test, sin dependencias)
