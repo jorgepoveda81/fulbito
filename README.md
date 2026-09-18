@@ -62,6 +62,7 @@ icons/icon.svg                   icono de la app
 docs/REGLAS_v1.0.md              las reglas de diseño del juego
 docs/FIREBASE_SETUP.md           como activar cuentas/tienda
 tests/rules-core.test.js         tests de js/rules-core.js (node --test, sin dependencias)
+tests/store-data.test.js         valida el catalogo de la tienda (sumas de 11/7, ids unicos, sin pay to win)
 package.json                     "npm test" corre los tests
 ```
 
