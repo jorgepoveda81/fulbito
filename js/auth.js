@@ -152,8 +152,10 @@ export async function addCoins(amount){
   const fb = await getFirebase();
   if (!fb || !currentUser) return;
   const { db, fsMod } = fb;
-  currentUser.coins = (currentUser.coins || 0) + amount;
-  await fsMod.updateDoc(fsMod.doc(db, 'profiles', currentUser.uid), { coins: currentUser.coins });
+  currentUser.coins = (currentUser.coins || 0) + amount; // optimista, para que la UI responda al toque
+  // increment() suma en el servidor: si dos escrituras se solapan (dos pestañas, un
+  // reintento de red) ninguna pisa a la otra, a diferencia de mandar el total ya calculado.
+  await fsMod.updateDoc(fsMod.doc(db, 'profiles', currentUser.uid), { coins: fsMod.increment(amount) });
   notify();
 }
 
@@ -166,7 +168,10 @@ export async function recordMatchResult(result){
   const coinsEarned = coinsForResult(result);
   currentUser[field] = (currentUser[field] || 0) + 1;
   currentUser.coins = (currentUser.coins || 0) + coinsEarned;
-  await fsMod.updateDoc(fsMod.doc(db, 'profiles', currentUser.uid), { [field]: currentUser[field], coins: currentUser.coins });
+  await fsMod.updateDoc(fsMod.doc(db, 'profiles', currentUser.uid), {
+    [field]: fsMod.increment(1),
+    coins: fsMod.increment(coinsEarned),
+  });
   notify();
   return coinsEarned;
 }
