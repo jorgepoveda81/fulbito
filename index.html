@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f1416">
+<meta name="description" content="FULBITO - futbolin evolucionado para celular. Figuras fijas, auras, capitan movil y poderes tacticos.">
+<title>FULBITO - Prototipo</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<h1>&#9917; FULBITO</h1>
+<p class="subtitle">Futbolin evolucionado: figuras fijas, auras, capitan movil y arquero. Basado en las reglas Version 1.0.</p>
+
+<div class="orientation-hint" id="orientationHint">Gira el celular &#8635; para jugar mejor (cancha horizontal)</div>
+
+<div class="hud">
+  <div class="score">
+    <span class="teamtag tagA" id="tagAName">EQUIPO A</span>
+    <span id="scoreA">0</span>
+    <span style="color:var(--sub);font-size:16px;">-</span>
+    <span id="scoreB">0</span>
+    <span class="teamtag tagB" id="tagBName">EQUIPO B</span>
+  </div>
+  <div class="mid-hud">
+    <div class="matchtime" id="matchtime">3:00</div>
+    <div class="whoseturn"><span class="dot" id="turnDot" style="background:var(--teamA);"></span><span id="turnLabel">Turno Equipo A</span></div>
+    <div class="turnbar-wrap"><div class="turnbar" id="turnbar"></div></div>
+  </div>
+  <div style="text-align:right;">
+    <div class="turnlabel">Estado</div>
+    <div id="captainInfo" style="font-size:11px;color:var(--sub);">-</div>
+  </div>
+</div>
+
+<div class="field-wrap">
+  <canvas id="field" width="900" height="520"></canvas>
+  <div class="msg-overlay" id="msgOverlay"><div><div id="msgMain"></div><div class="small" id="msgSub"></div></div></div>
+
+  <div class="power-select-overlay" id="mainMenuOverlay">
+    <div class="power-select-box">
+      <h2>&#9917; FULBITO</h2>
+      <p class="ps-sub">Elegi como jugar y ponele nombre a los equipos.</p>
+      <div class="ps-grid" id="modeGrid">
+        <div class="ps-card selected" data-mode="hotseat" id="modeHotseat"><b>&#128101; 2 jugadores</b><span>Los dos en el mismo celular, se van pasando el turno.</span></div>
+        <div class="ps-card" data-mode="vsAI" id="modeVsAI"><b>&#129302; 1 jugador vs PC</b><span>Vos jugas de Equipo A, la compu controla al Equipo B.</span></div>
+      </div>
+      <div class="name-inputs">
+        <div class="name-field">
+          <label for="nameA">Nombre Equipo A</label>
+          <input type="text" id="nameA" maxlength="16" placeholder="EQUIPO A">
+        </div>
+        <div class="name-field" id="nameBWrap">
+          <label for="nameB">Nombre Equipo B</label>
+          <input type="text" id="nameB" maxlength="16" placeholder="EQUIPO B">
+        </div>
+      </div>
+      <button class="reset-btn" id="menuContinue">Jugar &#9654;</button>
+    </div>
+  </div>
+
+  <div class="power-select-overlay hidden" id="powerSelectOverlay">
+    <div class="power-select-box">
+      <h2 id="psTitle">Equipo A: elegi 2 poderes</h2>
+      <p id="psSubtitle" class="ps-sub">Tocalos para elegir. El rival no los ve hasta que los uses.</p>
+      <div class="ps-grid" id="psGrid"></div>
+      <button class="reset-btn" id="psConfirm" disabled>Confirmar (0/2)</button>
+    </div>
+  </div>
+
+  <div class="power-select-overlay hidden" id="handoffOverlay">
+    <div class="power-select-box">
+      <h2>Pasa el celular</h2>
+      <p class="ps-sub" id="handoffText">Equipo A ya eligio sus poderes. Que no mire Equipo B... digo, Equipo A.</p>
+      <button class="reset-btn" id="handoffContinue">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="powers" id="powersA">
+    <h3>PODERES &mdash; EQUIPO A</h3>
+    <div class="power-row" id="powerRowA"></div>
+  </div>
+  <div class="powers" id="powersB">
+    <h3>PODERES &mdash; EQUIPO B</h3>
+    <div class="power-row" id="powerRowB"></div>
+  </div>
+</div>
+
+<details class="settings">
+  <summary>&#9881;&#65039; Pantalla de pruebas (para ajustar los valores del juego)</summary>
+  <div class="settings-grid">
+    <div class="setting">
+      <label>Tamano del aura: <output id="out_aura">55</output> px</label>
+      <input type="range" id="set_aura" min="30" max="90" value="55">
+    </div>
+    <div class="setting">
+      <label>Friccion del balon (frena mas rapido a la derecha): <output id="out_friction">985</output></label>
+      <input type="range" id="set_friction" min="960" max="996" value="985">
+    </div>
+    <div class="setting">
+      <label>Velocidad maxima de tiro: <output id="out_speed">720</output></label>
+      <input type="range" id="set_speed" min="400" max="1000" value="720">
+    </div>
+    <div class="setting">
+      <label>Segundos por turno: <output id="out_turn">20</output>s</label>
+      <input type="range" id="set_turn" min="8" max="30" value="20">
+    </div>
+    <div class="setting">
+      <label>Duracion del partido: <output id="out_match">180</output>s</label>
+      <input type="range" id="set_match" min="30" max="300" value="180">
+    </div>
+    <div class="setting">
+      <label>Umbral VAR (empate muy cerrado): <output id="out_var">12</output>%</label>
+      <input type="range" id="set_var" min="2" max="40" value="12">
+    </div>
+    <div class="setting">
+      <label>Suma de habilidades del arquero: <output id="out_gktotal">7</output></label>
+      <input type="range" id="set_gktotal" min="4" max="11" value="7">
+    </div>
+    <div class="setting" style="display:flex;align-items:center;gap:8px;">
+      <label style="margin:0;"><input type="checkbox" id="set_debugghost"> Mostrar zonas fantasma (debug)</label>
+    </div>
+  </div>
+  <button class="reset-btn" id="btnReset">&#128260; Reiniciar partido (elegir poderes de nuevo)</button>
+</details>
+
+<div class="howto">
+  <b>Como se juega (para probar entre dos personas en la misma pantalla):</b> el jugador que tiene el balon se marca con un anillo dorado. Apunta con el mouse o el dedo hacia donde queres mandar el balon, manten presionado para cargar la fuerza y solta para pasar o tirar. Cargar poco = pase suave. Cargar mucho = tiro fuerte. Cuando el balon se detiene, el juego decide quien se queda con la posesion segun en que aura cayo, igual que en las reglas del documento. Antes de arrancar, cada equipo elige 2 poderes en secreto.
+  <div class="legend">
+    <span><span class="sw" style="background:var(--teamA);"></span> Equipo A (izquierda)</span>
+    <span><span class="sw" style="background:var(--teamB);"></span> Equipo B (derecha)</span>
+    <span><span class="sw" style="background:var(--gold);"></span> Capitan con el balon</span>
+    <span><span class="sw" style="background:#fff;"></span> Balon</span>
+  </div>
+</div>
+
+<script src="js/game.js"></script>
+</body>
+</html>

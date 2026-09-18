@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#2a9d5c"/>
+      <stop offset="100%" stop-color="#155c37"/>
+    </radialGradient>
+  </defs>
+  <rect width="192" height="192" rx="40" fill="url(#bg)"/>
+  <circle cx="96" cy="96" r="54" fill="none" stroke="#eef7f0" stroke-width="4" opacity="0.85"/>
+  <circle cx="96" cy="96" r="30" fill="#ffffff"/>
+  <g fill="#141b1e">
+    <polygon points="96,78 110,88 105,105 87,105 82,88"/>
+    <polygon points="96,60 96,78 82,88 70,76 78,62"/>
+    <polygon points="96,60 96,78 110,88 122,76 114,62"/>
+  </g>
+  <circle cx="96" cy="96" r="30" fill="none" stroke="#141b1e" stroke-width="2"/>
+  <text x="96" y="168" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="26" fill="#ffc94d">FULBITO</text>
+</svg>
