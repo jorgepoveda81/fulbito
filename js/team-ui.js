@@ -101,10 +101,22 @@ async function renderTeamScreen(container){
   owned.forEach(p => {
     const card = document.createElement('div');
     card.className = 'player-chip';
-    const career = p.careerMatches ? `<span>&#127942; ${p.careerGoals||0} goles en ${p.careerMatches} partido${p.careerMatches===1?'':'s'}</span>` : '';
-    card.innerHTML = `<b>${escapeHtml(p.name)}</b><span>${p.role} &middot; ${describeSkills(p)}</span>${career}`;
+    card.innerHTML = `<b>${escapeHtml(p.name)}</b><span>${p.role} &middot; ${describeSkills(p)}</span>${describeCareer(p)}`;
     grid.appendChild(card);
   });
+}
+
+// Historial de carrera del jugador (se acumula partido a partido, ver addCareerStats
+// en player-repo.js). El arquero muestra atajadas en vez de goles/precision de tiro.
+export function describeCareer(p){
+  if (!p.careerMatches) return '';
+  const matchWord = p.careerMatches===1 ? 'partido' : 'partidos';
+  if (p.type === 'keeper'){
+    return `<span>&#128737; ${p.careerSaves||0} atajadas en ${p.careerMatches} ${matchWord}</span>`;
+  }
+  const goals = p.careerGoals||0, shots = p.careerShots||0;
+  const accuracy = shots > 0 ? ` (${Math.round((goals/shots)*100)}%)` : '';
+  return `<span>&#127942; ${goals} goles en ${shots} tiros${accuracy} &middot; ${p.careerMatches} ${matchWord}</span>`;
 }
 
 function defaultRosterFrom(owned){
