@@ -31,7 +31,7 @@ Ademas del partido en si, FULBITO tiene una app chica alrededor:
 - **Cuenta**: jugar de invitado (sin nada, se crea sola), o crear una cuenta con nombre + PIN — sin pedir email ni ningun dato real. Con nombre + PIN podes volver a tu cuenta desde cualquier celular.
 - **Mi Equipo**: arma tu plantilla de 7 (arquero + 5 de campo + capitan), y elegi el color de tu equipo.
 - **Tienda**: jugadores nuevos con otra forma de repartir los mismos puntos (nunca mas fuerte, solo distinto — sin pay to win), comprados con monedas que se ganan jugando partidos, nunca con dinero real.
-- **Crear jugador propio**: repartir vos mismo los 11 puntos entre las 5 habilidades.
+- **Crear jugador propio**: repartir vos mismo los 11 puntos entre las 5 habilidades (jugador de campo/capitan) o los 7 puntos entre las 4 de arquero.
 - **Modo 2 jugadores con cuentas propias**: al arrancar un partido hotseat, si escribis el nombre de una cuenta real en "Equipo B" (por ejemplo la de tu hijo), el partido usa SU equipo y color guardados — sin tener que iniciar sesion como el en el mismo celular.
 
 Todo esto se guarda en [Firebase](https://firebase.google.com) (cuentas + base de datos). Sin configurarlo, el juego funciona igual pero con el equipo por defecto de siempre — ver `docs/FIREBASE_SETUP.md` para activarlo.
@@ -91,18 +91,16 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 - El tiro es de puntaria libre (arrastrar y soltar), no el sistema de 9 zonas fijas del documento (seccion 9). Se decidio a proposito dejarlo asi.
 - La IA sigue siendo pasa-hacia-adelante-y-tira-cerca-del-arco (no jugadas elaboradas ni cuenta propia), pero ahora la dificultad cambia que tan bien lo hace: en Facil reacciona lento, apunta con ruido, tira solo de muy cerca y calibra mal la fuerza; en Dificil reacciona casi al toque, apunta preciso, se anima a tirar desde mas lejos, calibra la fuerza con consistencia y usa "Impulso" antes de tirar si lo tiene disponible. Nunca ve mas de lo que veria un jugador humano (todo el estado es siempre visible para los dos lados).
 - En el modo de 2 jugadores, el Equipo B usa su equipo/color guardados solo si escribiste el nombre de una cuenta real que exista (busqueda de solo lectura); las monedas y estadisticas de esa partida solo se acreditan a la cuenta que esta con la sesion iniciada en el celular (el Equipo A), no al Equipo B.
-- Solo se pueden crear jugadores de campo/capitan (11 puntos). Crear arqueros personalizados (7 puntos) queda pendiente.
 - Las monedas se suman desde el navegador al terminar el partido; alguien que sepa tocar el codigo podria darse monedas de mas. Para una cuenta privada entre ustedes dos no es un problema real; si en algun momento se abre a mas gente, conviene mover ese calculo a una funcion de servidor (Firebase Cloud Functions).
 - La zona fantasma se ubica sola al azar la primera vez, pero se puede reubicar a mano en cualquier parte de la cancha antes de cada partido.
 - El poder "Escudo de aura" solo protege contra "Silencio" por ahora; el resto de los poderes que dice "ignora el efecto de un poder rival" quedan para una version futura mas especifica.
 
 ## Proximos pasos sugeridos
 
-1. **Arqueros personalizados** (7 puntos) en el creador de jugador.
-2. **Sesiones realmente simultaneas** para el Equipo B en modo 2 jugadores (hoy usa su equipo guardado por busqueda, pero sus monedas/estadisticas no se acreditan porque no tiene la sesion iniciada en ese celular).
-3. **Sistema de tiro por 9 zonas** tal como lo describe la seccion 9, en vez del apuntado libre, si en algun momento lo prefieren.
-4. **Llevarlo a las tiendas de apps**: envolver esta misma pagina con [Capacitor](https://capacitorjs.com/) (`npx cap init`, `npx cap add android`, `npx cap add ios`) genera un proyecto nativo listo para Android Studio / Xcode sin reescribir el juego. Para publicarlo hace falta una cuenta de Google Play Console (pago unico) y/o Apple Developer Program (anual), mas las claves de firma.
-5. **Modo online**: jugar contra alguien en otro celular en vez de compartir la pantalla (Firebase ya deja la base puesta con Firestore, se podria usar para sincronizar la partida).
+1. **Sesiones realmente simultaneas** para el Equipo B en modo 2 jugadores (hoy usa su equipo guardado por busqueda, pero sus monedas/estadisticas no se acreditan porque no tiene la sesion iniciada en ese celular).
+2. **Sistema de tiro por 9 zonas** tal como lo describe la seccion 9, en vez del apuntado libre, si en algun momento lo prefieren.
+3. **Llevarlo a las tiendas de apps**: envolver esta misma pagina con [Capacitor](https://capacitorjs.com/) (`npx cap init`, `npx cap add android`, `npx cap add ios`) genera un proyecto nativo listo para Android Studio / Xcode sin reescribir el juego. Para publicarlo hace falta una cuenta de Google Play Console (pago unico) y/o Apple Developer Program (anual), mas las claves de firma.
+4. **Modo online**: jugar contra alguien en otro celular en vez de compartir la pantalla (Firebase ya deja la base puesta con Firestore, se podria usar para sincronizar la partida).
 
 ## Para vos, que segui el proyecto
 
