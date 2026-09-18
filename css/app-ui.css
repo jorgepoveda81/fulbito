@@ -1,0 +1,60 @@
+/* Estilos de las pantallas de cuenta/equipo/tienda (fuera del partido en si). */
+
+.notice-card, .home-card, .profile-card, .roster-card, .collection-card, .creator-card, .coins-badge{
+  background:var(--panel); border:1px solid #263033; border-radius:14px; padding:14px 16px;
+}
+.notice-card{ color:var(--sub); font-size:13px; line-height:1.5; }
+.notice-card code{ background:var(--panel2); padding:1px 5px; border-radius:4px; }
+
+.home-card label, .profile-card label{ display:block; font-size:12px; color:var(--sub); margin-bottom:6px; }
+.home-card input[type=text], .profile-card input[type=text]{
+  width:100%; background:var(--panel2); border:1px solid #2c383d; border-radius:8px;
+  padding:10px 12px; color:var(--text); font-family:'Inter'; font-weight:700; font-size:14px; margin-bottom:10px;
+}
+.coins-badge{ font-weight:700; font-size:13px; color:var(--gold); padding:10px 14px; }
+.play-btn{ font-size:16px; padding:16px; background:var(--teamA); margin-top:0; }
+.home-blurb{ color:var(--sub); font-size:12.5px; text-align:center; line-height:1.5; padding:0 6px; }
+
+.roster-card h3, .collection-card h3, .creator-card h3{ margin:0 0 10px; font-size:14px; color:var(--gold); }
+.roster-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid #212b2f; }
+.roster-row:last-child{ border-bottom:none; }
+.roster-row label{ font-size:12.5px; color:var(--sub); flex:0 0 130px; }
+.roster-row select{
+  flex:1; background:var(--panel2); color:var(--text); border:1px solid #2c383d; border-radius:8px;
+  padding:8px 10px; font-family:'Inter'; font-size:12px; min-width:0;
+}
+
+.collection-grid, .store-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+.player-chip{
+  background:var(--panel2); border:1px solid #2c383d; border-radius:10px; padding:10px 12px; font-size:12px;
+}
+.player-chip b{ display:block; margin-bottom:3px; }
+.player-chip span{ color:var(--sub); font-size:10.5px; }
+
+.creator-hint{ color:var(--sub); font-size:12px; margin:0 0 10px; }
+.creator-name{
+  width:100%; background:var(--panel2); border:1px solid #2c383d; border-radius:8px; padding:9px 11px;
+  color:var(--text); font-family:'Inter'; font-weight:700; font-size:13px; margin-bottom:10px;
+}
+.creator-row{ margin-bottom:8px; }
+.creator-row label{ display:block; font-size:12px; color:var(--sub); margin-bottom:2px; }
+.creator-row output{ color:var(--gold); font-weight:700; }
+.creator-row input[type=range]{ width:100%; }
+.creator-remaining{ font-size:12.5px; color:var(--teamB); font-weight:700; margin:8px 0; }
+.creator-remaining-ok{ color:#4ade80; }
+.creator-msg{ font-size:12px; color:var(--sub); margin-top:8px; min-height:16px; }
+
+.store-card{
+  background:var(--panel2); border:1px solid #2c383d; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:6px;
+}
+.store-card.rarity-rara{ border-color:#3f6fb0; }
+.store-card.rarity-legendaria{ border-color:var(--gold); box-shadow:0 0 14px -4px rgba(255,201,77,0.4); }
+.store-card-top{ display:flex; align-items:center; justify-content:space-between; }
+.store-card-top b{ font-size:13px; }
+.rarity-tag{ font-size:9.5px; text-transform:uppercase; color:var(--sub); letter-spacing:0.4px; }
+.rarity-rara .rarity-tag{ color:#7fb0ff; }
+.rarity-legendaria .rarity-tag{ color:var(--gold); }
+.store-card-role{ font-size:11px; color:var(--sub); }
+.store-card-skills{ font-size:10.5px; color:var(--sub); }
+.store-buy-btn{ margin-top:4px; padding:9px; font-size:12px; width:100%; background:var(--teamA); }
+.store-buy-btn:disabled{ background:#2c383d; color:var(--sub); }

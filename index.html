@@ -12,11 +12,26 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/app-ui.css">
 </head>
 <body>
 
 <h1>&#9917; FULBITO</h1>
 <p class="subtitle">Futbolin evolucionado: figuras fijas, auras, capitan movil y arquero. Basado en las reglas Version 1.0.</p>
+
+<div id="appShell">
+  <nav class="app-tabs" id="appTabs">
+    <button class="app-tab active" data-tab="home">&#127968; Inicio</button>
+    <button class="app-tab" data-tab="team">&#128101; Mi Equipo</button>
+    <button class="app-tab" data-tab="store">&#128722; Tienda</button>
+  </nav>
+  <section id="tabHome" class="app-screen"></section>
+  <section id="tabTeam" class="app-screen hidden"></section>
+  <section id="tabStore" class="app-screen hidden"></section>
+</div>
+
+<div id="gameRoot" class="hidden">
+<button class="back-to-menu" id="backToMenu">&#8592; Menu</button>
 
 <div class="orientation-hint" id="orientationHint">Gira el celular &#8635; para jugar mejor (cancha horizontal)</div>
 
@@ -149,6 +164,9 @@
   </div>
 </div>
 
+</div><!-- /gameRoot -->
+
 <script src="js/game.js"></script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -24,18 +24,41 @@ python3 -m http.server 8080
 
 El jugador que tiene el balon se marca con un anillo dorado. Apunta con el mouse o el dedo, manten presionado para cargar la fuerza y solta para pasar o tirar. Cuando el balon se detiene, el juego decide quien se queda con la posesion segun en que aura cayo (ver seccion 5 y 7 de las reglas).
 
+## Cuenta, tienda y equipo propio
+
+Ademas del partido en si, FULBITO tiene una app chica alrededor:
+
+- **Cuenta anonima**: se crea sola, sin pedir email ni contraseña — solo un nombre de jugador elegido.
+- **Mi Equipo**: arma tu plantilla de 7 (arquero + 5 de campo + capitan) con los jugadores que tengas.
+- **Tienda**: jugadores nuevos con otra forma de repartir los mismos puntos (nunca mas fuerte, solo distinto — sin pay to win), comprados con monedas que se ganan jugando partidos, nunca con dinero real.
+- **Crear jugador propio**: repartir vos mismo los 11 puntos entre las 5 habilidades.
+
+Todo esto se guarda en [Firebase](https://firebase.google.com) (cuentas + base de datos). Sin configurarlo, el juego funciona igual pero con el equipo por defecto de siempre — ver `docs/FIREBASE_SETUP.md` para activarlo.
+
 ## Estructura del proyecto
 
 ```
-index.html              pantalla principal (HUD, cancha, menus, panel de pruebas)
-css/style.css            todos los estilos
-js/game.js                todo el motor del juego (fisica, reglas, IA, sonido, poderes)
-manifest.webmanifest      hace que el juego se pueda "instalar" en el celular
-icons/icon.svg             icono de la app
-docs/REGLAS_v1.0.md        las reglas de diseño del juego, versionadas junto al codigo
+index.html                   pantalla principal: menu, HUD del partido y cancha
+css/style.css                 estilos del partido (cancha, HUD, poderes, formacion)
+css/app-ui.css                 estilos de las pantallas de cuenta/equipo/tienda
+js/game.js                     el motor del partido (fisica, reglas, IA, sonido, poderes)
+js/app.js                       arranca todo y conecta las pantallas nuevas con game.js
+js/firebase-init.js             configuracion de Firebase (claves)
+js/auth.js                      cuenta anonima y perfil (nombre, monedas, resultados)
+js/player-repo.js               leer/guardar jugadores propios y el equipo en Firestore
+js/store-data.js                catalogo de jugadores de la tienda + equipo inicial gratis
+js/player-creator.js            creador de jugador propio (repartir 11 puntos)
+js/menu-ui.js                   pantalla "Inicio"
+js/team-ui.js                    pantalla "Mi Equipo"
+js/store-ui.js                   pantalla "Tienda"
+firestore.rules                 reglas de seguridad (cada quien solo ve lo suyo)
+manifest.webmanifest            hace que el juego se pueda "instalar" en el celular
+icons/icon.svg                   icono de la app
+docs/REGLAS_v1.0.md              las reglas de diseño del juego
+docs/FIREBASE_SETUP.md           como activar cuentas/tienda
 ```
 
-Todo esta en JavaScript plano (sin frameworks ni instalacion de paquetes) para que sea facil de leer y de seguir modificando.
+Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartido en archivos chicos, cada uno con una sola responsabilidad, para que sea facil de leer y de seguir modificando.
 
 ## Que esta implementado (Version 1.0 de las reglas)
 
@@ -53,19 +76,21 @@ Todo esta en JavaScript plano (sin frameworks ni instalacion de paquetes) para q
 
 ## Simplificaciones conocidas (para seguir mejorando)
 
-- El tiro es de puntaria libre (arrastrar y soltar), no el sistema de 9 zonas fijas del documento (seccion 9). Adaptarlo del todo implicaria rehacer el control de disparo.
-- Las habilidades de cada jugador son un preset fijo por posicion (defensor/mediocampista/delantero/capitan). Falta una pantalla para editarlas jugador por jugador.
-- La IA es basica: pasa hacia adelante y tira si esta cerca del arco. No usa poderes ni jugadas elaboradas.
+- El tiro es de puntaria libre (arrastrar y soltar), no el sistema de 9 zonas fijas del documento (seccion 9). Se decidio a proposito dejarlo asi.
+- La IA es basica: pasa hacia adelante y tira si esta cerca del arco. No usa poderes ni jugadas elaboradas, y siempre juega con el equipo por defecto (no tiene cuenta propia).
+- El equipo guardado ("Mi Equipo") solo se aplica al Equipo A. En el modo de 2 jugadores en el mismo celular, el Equipo B siempre usa el preset por defecto, porque por ahora las cuentas son una por celular.
+- Solo se pueden crear jugadores de campo/capitan (11 puntos). Crear arqueros personalizados (7 puntos) queda pendiente.
+- Las monedas se suman desde el navegador al terminar el partido; alguien que sepa tocar el codigo podria darse monedas de mas. Para una cuenta privada entre ustedes dos no es un problema real; si en algun momento se abre a mas gente, conviene mover ese calculo a una funcion de servidor (Firebase Cloud Functions).
 - La zona fantasma se ubica sola al azar en la mitad propia; el documento no exige que sea elegible a mano, pero podria agregarse.
 - El poder "Escudo de aura" solo protege contra "Silencio" por ahora; el resto de los poderes que dice "ignora el efecto de un poder rival" quedan para una version futura mas especifica.
 
 ## Proximos pasos sugeridos
 
-1. **Editor de habilidades**: pantalla donde cada jugador reparte sus 11 puntos antes del partido.
-2. **Sistema de tiro por 9 zonas** tal como lo describe la seccion 9, en vez del apuntado libre.
-3. **Guardar partidas/estadisticas** (requeriria un backend o `localStorage`).
-4. **Llevarlo a las tiendas de apps**: envolver esta misma pagina con [Capacitor](https://capacitorjs.com/) (`npx cap init`, `npx cap add android`, `npx cap add ios`) genera un proyecto nativo listo para Android Studio / Xcode sin reescribir el juego. Para publicarlo hace falta una cuenta de Google Play Console (pago unico) y/o Apple Developer Program (anual), mas las claves de firma — eso es un paso aparte que se hace cuando esas cuentas esten listas.
-5. **Modo online**: jugar contra alguien en otro celular (necesitaria un servidor).
+1. **Arqueros personalizados** (7 puntos) en el creador de jugador.
+2. **Equipo propio tambien para el Equipo B** en modo 2 jugadores (necesitaria elegir de cuenta en el mismo celular, o iniciar sesion cada uno).
+3. **Sistema de tiro por 9 zonas** tal como lo describe la seccion 9, en vez del apuntado libre, si en algun momento lo prefieren.
+4. **Llevarlo a las tiendas de apps**: envolver esta misma pagina con [Capacitor](https://capacitorjs.com/) (`npx cap init`, `npx cap add android`, `npx cap add ios`) genera un proyecto nativo listo para Android Studio / Xcode sin reescribir el juego. Para publicarlo hace falta una cuenta de Google Play Console (pago unico) y/o Apple Developer Program (anual), mas las claves de firma.
+5. **Modo online**: jugar contra alguien en otro celular en vez de compartir la pantalla (Firebase ya deja la base puesta con Firestore, se podria usar para sincronizar la partida).
 
 ## Para vos, que segui el proyecto
 

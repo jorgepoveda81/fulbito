@@ -1,0 +1,30 @@
+rules_version = '2';
+
+// Reglas de seguridad de Firestore para FULBITO.
+// Cada usuario (cuenta anonima) solo puede leer y escribir sus propios datos.
+// Pegar este archivo completo en: Firebase Console -> Firestore Database -> Reglas -> Publicar.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // profiles/{uid}: nombre de jugador elegido y monedas ganadas jugando.
+    match /profiles/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // players/{playerId}: jugadores que el usuario compro en la tienda o creo el mismo.
+    match /players/{playerId} {
+      allow read, update, delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // teams/{uid}: el equipo activo del usuario (un solo documento, id = su uid).
+    match /teams/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

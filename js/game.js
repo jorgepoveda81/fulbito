@@ -101,6 +101,22 @@ function resetPlayers(){
   ];
   applyFormation('A');
   applyFormation('B');
+  applyRosterOverride();
+}
+
+// ============================================================================
+// Puente con la app externa (cuentas/tienda/equipo, ver js/app.js).
+// El equipo del usuario logueado reemplaza los presets fijos del Equipo A.
+// ============================================================================
+let rosterOverrideA = null; // arreglo de 7 {skills, name} en el mismo orden que resetPlayers() crea al Equipo A
+function applyRosterOverride(){
+  if (!rosterOverrideA) return;
+  players.filter(p=>p.team==='A').forEach((p,i)=>{
+    const ov = rosterOverrideA[i];
+    if (!ov) return;
+    if (ov.skills) p.skills = { ...ov.skills };
+    if (ov.name) p.displayName = ov.name;
+  });
 }
 function captainOf(team){ return players.find(p=>p.team===team && p.isCaptain); }
 function keeperOf(team){ return players.find(p=>p.team===team && p.isKeeper); }
@@ -922,6 +938,10 @@ function finishPenalties(){
   state.phase='ended';
   const winner = p.scoreA>p.scoreB ? 'Equipo A' : 'Equipo B';
   flashMessage('&#127942; Fin de los penales', `¡Gana ${winner}! (${p.scoreA} - ${p.scoreB})`, 500000);
+  notifyMatchEnd(p.scoreA>p.scoreB ? 'win' : 'loss'); // en penales no hay empate
+}
+function notifyMatchEnd(resultForA){
+  if (window.FulbitoGame && window.FulbitoGame.onMatchEnd) window.FulbitoGame.onMatchEnd(resultForA);
 }
 
 // ============================================================================
@@ -969,6 +989,7 @@ function endMatch(){
   state.phase = 'ended';
   const winner = state.scoreA>state.scoreB ? 'Equipo A' : (state.scoreB>state.scoreA ? 'Equipo B' : 'Empate');
   flashMessage('&#127942; Fin del partido', winner==='Empate' ? 'Empate' : `¡Gana ${winner}!`, 500000);
+  notifyMatchEnd(state.scoreA>state.scoreB ? 'win' : (state.scoreB>state.scoreA ? 'loss' : 'draw'));
 }
 
 // ============================================================================
@@ -1317,9 +1338,14 @@ function updateAI(dt){
   aiState.releaseAt = performance.now() + (isShot ? Math.min(chargeMs, settings.chargeMs) : chargeMs);
 }
 
+window.FulbitoGame = {
+  // roster: arreglo de 7 {skills, name} (arquero, def, def, mid, mid, fwd, capitan) o null para volver al preset por defecto
+  setPlayerRoster(roster){ rosterOverrideA = roster; },
+  showModeMenu(){ mainMenuOverlay.classList.remove('hidden'); },
+};
+
 resetPlayers();
 draw();
-mainMenuOverlay.classList.remove('hidden');
 requestAnimationFrame(loop);
 
 })();

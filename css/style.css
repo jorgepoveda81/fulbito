@@ -23,7 +23,28 @@ h1{
   font-family:'Archivo Black',sans-serif; font-size:26px; letter-spacing:0.5px;
   margin:4px 0 2px; color:var(--gold);
 }
-.subtitle{ color:var(--sub); font-size:13px; margin-bottom:10px; text-align:center; max-width:560px; }
+.subtitle{ color:var(--sub); font-size:13px; margin-bottom:14px; text-align:center; max-width:560px; }
+
+.hidden{ display:none !important; }
+
+#appShell{ width:100%; max-width:480px; display:flex; flex-direction:column; gap:12px; }
+.app-tabs{
+  display:flex; gap:6px; background:var(--panel); border:1px solid #263033; border-radius:14px; padding:5px;
+}
+.app-tab{
+  flex:1; background:none; border:none; color:var(--sub); font-family:'Inter'; font-weight:700; font-size:12.5px;
+  padding:10px 6px; border-radius:10px; cursor:pointer;
+}
+.app-tab.active{ background:var(--panel2); color:var(--gold); }
+.app-screen{ display:flex; flex-direction:column; gap:12px; }
+
+.back-to-menu{
+  align-self:flex-start; background:var(--panel); color:var(--text); border:1px solid #263033;
+  border-radius:10px; padding:8px 14px; font-family:'Inter'; font-weight:700; font-size:12.5px;
+  cursor:pointer; margin-bottom:10px;
+}
+
+#gameRoot{ width:100%; max-width:900px; display:flex; flex-direction:column; align-items:center; }
 
 .orientation-hint{
   display:none; width:100%; max-width:900px; text-align:center; background:var(--panel2);
