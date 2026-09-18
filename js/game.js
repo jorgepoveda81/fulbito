@@ -177,7 +177,7 @@ const POWERS = [
   { id:'tiempo',        name:'Tiempo extra',        desc:'+5s a este turno', scope:'own' },
   { id:'impulso',       name:'Impulso',              desc:'+20% de fuerza al proximo disparo', scope:'own' },
   { id:'farmear',       name:'Farmear aura',         desc:'Tras 2 pases seguidos, agranda tu aura 25%', scope:'own' },
-  { id:'planb',         name:'Plan B',                desc:'Cancela tu puntaria y volve a apuntar', scope:'own' },
+  { id:'planb',         name:'Plan B',                desc:'Cancela tu puntaria y vuelve a apuntar', scope:'own' },
   { id:'segundobloqueo',name:'Segundo bloqueo',      desc:'Intento extra de intercepcion en el turno rival', scope:'rival' },
   { id:'silencio',      name:'Silencio',              desc:'El rival no usa poderes en su proximo turno', scope:'own' },
   { id:'escudo',        name:'Escudo de aura',       desc:'Te salva de un Silencio rival', scope:'both' },
@@ -390,7 +390,7 @@ function beginPowerSelection(){
 function openPickerFor(team){
   pickingTeam = team;
   tempPick = [];
-  psTitle.textContent = `${teamName(team)}: elegi 2 poderes`;
+  psTitle.textContent = `${teamName(team)}: elige 2 poderes`;
   psGrid.innerHTML = '';
   POWERS.forEach(p => {
     const card = document.createElement('div');
@@ -651,7 +651,7 @@ function activatePower(team, id){
     case 'planb':
       if (aim.active && state.holder && state.holder.team===team){
         aim.active=false; aim.charging=false; markUsed(team,id);
-        flashMessage('Plan B', 'Volve a apuntar', 700);
+        flashMessage('Plan B', 'Vuelve a apuntar', 700);
       }
       break;
     case 'segundobloqueo':
@@ -671,7 +671,7 @@ function activatePower(team, id){
     case 'pasocapitan':
       if (state.turnTeam===team && state.holder && state.holder.isCaptain){
         state.moveCaptainMode[team] = true; markUsed(team,id);
-        flashMessage('Paso del capitan', 'Toca donde queres moverlo', 1000);
+        flashMessage('Paso del capitan', 'Toca donde quieres moverlo', 1000);
       }
       break;
     case 'revisionvar':

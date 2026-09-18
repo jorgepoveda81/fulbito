@@ -37,7 +37,7 @@ async function renderTeamScreen(container){
   container.innerHTML = `
     <div class="profile-card">
       <label>Tu nombre de jugador</label>
-      <input type="text" id="teamUsername" maxlength="16" placeholder="Ponete un nombre" value="${escapeHtml(user.username||'')}">
+      <input type="text" id="teamUsername" maxlength="16" placeholder="Ponte un nombre" value="${escapeHtml(user.username||'')}">
       <label>Color de tu equipo</label>
       <div class="color-swatches" id="colorSwatches">
         ${TEAM_COLOR_PALETTE.map(c => `<button class="color-swatch ${c===(user.color||'#2f6fe0')?'selected':''}" style="background:${c}" data-color="${c}" aria-label="${c}"></button>`).join('')}
@@ -88,7 +88,7 @@ async function renderTeamScreen(container){
       newRoster[slot.key] = val;
     });
     const msg = container.querySelector('#teamSaveMsg');
-    if (missing){ msg.textContent = 'Elegi un jugador para cada puesto.'; return; }
+    if (missing){ msg.textContent = 'Elige un jugador para cada puesto.'; return; }
     await saveTeam(newRoster);
     msg.textContent = 'Equipo guardado. Ya se usa cuando toques Jugar.';
   };

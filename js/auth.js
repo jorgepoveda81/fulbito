@@ -84,7 +84,7 @@ export async function signUp(name, pin){
   const fb = await getFirebase();
   if (!fb) return { ok:false, error:'Firebase no esta disponible.' };
   const username = String(name).trim().slice(0,16);
-  if (normalizeUsername(username).length < 2) return { ok:false, error:'Poné un nombre con al menos 2 letras o numeros.' };
+  if (normalizeUsername(username).length < 2) return { ok:false, error:'Pon un nombre con al menos 2 letras o numeros.' };
   if (String(pin).trim().length < 4) return { ok:false, error:'El PIN tiene que tener al menos 4 numeros.' };
   const { auth, authMod } = fb;
   const email = toSyntheticEmail(username);
@@ -105,8 +105,8 @@ export async function signUp(name, pin){
     notify();
     return { ok:true };
   } catch (err){
-    if (err.code === 'auth/email-already-in-use') return { ok:false, error:'Ese nombre ya tiene cuenta. Probá iniciar sesion, o elegí otro nombre.' };
-    if (err.code === 'auth/credential-already-in-use') return { ok:false, error:'Ese nombre ya tiene cuenta. Probá iniciar sesion, o elegí otro nombre.' };
+    if (err.code === 'auth/email-already-in-use') return { ok:false, error:'Ese nombre ya tiene cuenta. Prueba iniciar sesion, o elige otro nombre.' };
+    if (err.code === 'auth/credential-already-in-use') return { ok:false, error:'Ese nombre ya tiene cuenta. Prueba iniciar sesion, o elige otro nombre.' };
     console.warn('FULBITO: error en signUp', err);
     return { ok:false, error:'No se pudo crear la cuenta.' };
   }

@@ -25,7 +25,7 @@ async function renderStoreScreen(container){
   const ownedTemplateIds = new Set(owned.map(p => p.templateId).filter(Boolean));
 
   container.innerHTML = `
-    <div class="coins-badge">&#129689; Tenes ${user.coins||0} monedas &middot; se ganan jugando partidos</div>
+    <div class="coins-badge">&#129689; Tienes ${user.coins||0} monedas &middot; se ganan jugando partidos</div>
     <div class="store-grid" id="storeGrid"></div>
   `;
   const grid = container.querySelector('#storeGrid');
@@ -42,7 +42,7 @@ async function renderStoreScreen(container){
       <div class="store-card-role">${item.role}</div>
       <div class="store-card-skills">${describeSkills(item)}</div>
       <button class="reset-btn store-buy-btn" ${already || user.coins < item.cost ? 'disabled' : ''}>
-        ${already ? 'Ya lo tenes' : `Comprar &middot; ${item.cost} &#129689;`}
+        ${already ? 'Ya lo tienes' : `Comprar &middot; ${item.cost} &#129689;`}
       </button>
     `;
     const btn = card.querySelector('.store-buy-btn');

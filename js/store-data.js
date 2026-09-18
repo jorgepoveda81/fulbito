@@ -4,7 +4,7 @@
 // de repartir los mismos puntos: es coleccionar variedad, no comprar ventaja.
 //
 // Para agregar un jugador nuevo: copia un objeto, cambia nombre/skills/costo y
-// fijate que la suma de siga dando 11 (o 7 para arquero). Si no da justo, el
+// fíjate que la suma siga dando 11 (o 7 para arquero). Si no da justo, el
 // jugador no se puede usar (se valida al guardar el equipo).
 
 export const FIELD_SKILL_SUM = 11;

@@ -48,12 +48,12 @@ function renderHomeScreen(container, onPlay){
   container.innerHTML = `
     <div class="home-card">
       <label>Tu nombre de jugador</label>
-      <input type="text" id="homeUsername" maxlength="16" placeholder="Ponete un nombre" value="${(user.username||'').replace(/"/g,'')}">
+      <input type="text" id="homeUsername" maxlength="16" placeholder="Ponte un nombre" value="${(user.username||'').replace(/"/g,'')}">
       <div class="coins-badge">&#129689; ${user.coins||0} monedas &middot; ${user.wins||0}V ${user.draws||0}E ${user.losses||0}D</div>
-      ${user.isAnonymous ? `<p class="creator-hint">Jugando de invitado. Si creas una cuenta con nombre+PIN, podes volver a ella desde cualquier celular sin perder tu equipo.</p>` : ''}
+      ${user.isAnonymous ? `<p class="creator-hint">Jugando de invitado. Si creas una cuenta con nombre+PIN, puedes volver a ella desde cualquier celular sin perder tu equipo.</p>` : ''}
     </div>
     <button class="reset-btn play-btn" id="homePlayBtn">&#9917; Jugar</button>
-    <div class="home-blurb">Elegi tu equipo en <b>Mi Equipo</b> y sumate jugadores nuevos en la <b>Tienda</b> jugando partidos.</div>
+    <div class="home-blurb">Elige tu equipo en <b>Mi Equipo</b> y suma jugadores nuevos en la <b>Tienda</b> jugando partidos.</div>
     <button class="back-to-menu" id="homeAccountBtn">${user.isAnonymous ? 'Crear cuenta / iniciar sesion' : 'Cerrar sesion (para que juegue otra persona)'}</button>
   `;
   container.querySelector('#homeUsername').onchange = e => setUsername(e.target.value.trim().slice(0,16));

@@ -66,8 +66,8 @@ export function renderPlayerCreator(container, { onSaved } = {}){
   }
   function buildSliders(){
     hintEl.textContent = type === 'keeper'
-      ? `Repartí exactamente ${KEEPER_SKILL_SUM} puntos entre las 4 habilidades de arquero.`
-      : `Repartí exactamente ${FIELD_SKILL_SUM} puntos entre las 5 habilidades. Sirve para un jugador de campo o tu capitan.`;
+      ? `Reparte exactamente ${KEEPER_SKILL_SUM} puntos entre las 4 habilidades de arquero.`
+      : `Reparte exactamente ${FIELD_SKILL_SUM} puntos entre las 5 habilidades. Sirve para un jugador de campo o tu capitan.`;
     slidersEl.innerHTML = '';
     skillsFor().forEach(s => {
       const row = document.createElement('div');
@@ -103,7 +103,7 @@ export function renderPlayerCreator(container, { onSaved } = {}){
 
   saveBtn.onclick = async () => {
     const name = nameInput.value.trim();
-    if (!name){ msgEl.textContent = 'Ponele un nombre primero.'; return; }
+    if (!name){ msgEl.textContent = 'Ponle un nombre primero.'; return; }
     saveBtn.disabled = true;
     saveBtn.textContent = 'Guardando...';
     const role = type === 'keeper' ? 'Arquero' : 'Personalizado';

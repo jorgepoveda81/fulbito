@@ -5,14 +5,14 @@ FULBITO usa [Firebase](https://firebase.google.com) para las cuentas y para guar
 ## 1. Crear el proyecto (una sola vez)
 
 1. Entra a [console.firebase.google.com](https://console.firebase.google.com) con tu cuenta de Google.
-2. **Crear proyecto** → nombre "Fulbito" → podes desactivar Google Analytics.
+2. **Crear proyecto** → nombre "Fulbito" → puedes desactivar Google Analytics.
 3. **Build → Authentication → Sign-in method** → activa **Anonymous** (modo invitado) **y** **Email/Password** (para las cuentas con nombre+PIN — el "email" que usa por dentro es inventado, nunca se manda nada a nadie).
 4. **Build → Firestore Database → Create database** → modo **production**.
 5. **Project settings** (el engranaje) → "Your apps" → boton **`</>`** (Web) → nombre "fulbito-web" → **Register app**. Copia el bloque `firebaseConfig`.
 6. Pega ese bloque en `js/firebase-init.js` (reemplaza el objeto `firebaseConfig` que esta ahi con valores de ejemplo).
 7. **Firestore Database → Reglas** → pega el contenido de `firestore.rules` (esta en la raiz del repo) → **Publicar**.
 
-> Las reglas no se despliegan solas cuando cambia el archivo en el repo — es un paso manual. Si ya las habias pegado antes, volve a pegar la version actual del archivo cada vez que cambie (por ejemplo, se agrego una validacion nueva para que nadie pueda inventarse habilidades de mas escribiendo directo en la base).
+> Las reglas no se despliegan solas cuando cambia el archivo en el repo — es un paso manual. Si ya las habias pegado antes, vuelve a pegar la version actual del archivo cada vez que cambie (por ejemplo, se agrego una validacion nueva para que nadie pueda inventarse habilidades de mas escribiendo directo en la base).
 
 ## 2. Modelo de datos
 

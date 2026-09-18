@@ -28,7 +28,7 @@ export function renderAuthGate(container){
       const name = container.querySelector('#authName').value.trim();
       const pin = container.querySelector('#authPin').value.trim();
       const msg = container.querySelector('#authMsg');
-      if (!name){ msg.textContent = 'Ponete un nombre.'; return; }
+      if (!name){ msg.textContent = 'Ponte un nombre.'; return; }
       if (pin.length < 4){ msg.textContent = 'El PIN necesita al menos 4 numeros.'; return; }
       msg.textContent = 'Un momento...';
       const result = mode==='signup' ? await signUp(name, pin) : await logIn(name, pin);

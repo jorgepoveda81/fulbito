@@ -8,9 +8,9 @@ Basado en `docs/REGLAS_v1.0.md` (documento de reglas del proyecto).
 
 No hace falta instalar nada. Es una pagina web:
 
-1. Abri `index.html` en el navegador del celular o la compu (doble click, o serví la carpeta con cualquier servidor estatico).
-2. En el celular: desde Chrome o Safari, toca el menu del navegador y elegi **"Agregar a pantalla de inicio"**. Queda instalado como si fuera una app, con su propio icono.
-3. Elegi el modo (2 jugadores en el mismo celular, o 1 jugador contra la PC), ponele nombre a los equipos y a jugar.
+1. Abre `index.html` en el navegador del celular o la compu (doble click, o sirve la carpeta con cualquier servidor estatico).
+2. En el celular: desde Chrome o Safari, toca el menu del navegador y elige **"Agregar a pantalla de inicio"**. Queda instalado como si fuera una app, con su propio icono.
+3. Elige el modo (2 jugadores en el mismo celular, o 1 jugador contra la PC), ponle nombre a los equipos y a jugar.
 
 Para probarlo desde la compu con un servidor local (evita restricciones del navegador al abrir el archivo directo):
 
@@ -22,17 +22,17 @@ python3 -m http.server 8080
 
 ## Como se juega
 
-El jugador que tiene el balon se marca con un anillo dorado. Apunta con el mouse o el dedo, manten presionado para cargar la fuerza y solta para pasar o tirar. Cuando el balon se detiene, el juego decide quien se queda con la posesion segun en que aura cayo (ver seccion 5 y 7 de las reglas).
+El jugador que tiene el balon se marca con un anillo dorado. Apunta con el mouse o el dedo, mantén presionado para cargar la fuerza y suelta para pasar o tirar. Cuando el balon se detiene, el juego decide quien se queda con la posesion segun en que aura cayo (ver seccion 5 y 7 de las reglas).
 
 ## Cuenta, tienda y equipo propio
 
 Ademas del partido en si, FULBITO tiene una app chica alrededor:
 
-- **Cuenta**: jugar de invitado (sin nada, se crea sola), o crear una cuenta con nombre + PIN — sin pedir email ni ningun dato real. Con nombre + PIN podes volver a tu cuenta desde cualquier celular.
-- **Mi Equipo**: arma tu plantilla de 7 (arquero + 5 de campo + capitan), y elegi el color de tu equipo.
+- **Cuenta**: jugar de invitado (sin nada, se crea sola), o crear una cuenta con nombre + PIN — sin pedir email ni ningun dato real. Con nombre + PIN puedes volver a tu cuenta desde cualquier celular.
+- **Mi Equipo**: arma tu plantilla de 7 (arquero + 5 de campo + capitan), y elige el color de tu equipo.
 - **Tienda**: jugadores nuevos con otra forma de repartir los mismos puntos (nunca mas fuerte, solo distinto — sin pay to win), comprados con monedas que se ganan jugando partidos, nunca con dinero real.
-- **Crear jugador propio**: repartir vos mismo los 11 puntos entre las 5 habilidades (jugador de campo/capitan) o los 7 puntos entre las 4 de arquero.
-- **Modo 2 jugadores con cuentas propias**: al arrancar un partido hotseat, si escribis el nombre de una cuenta real en "Equipo B" (por ejemplo la de tu hijo), el partido usa SU equipo y color guardados — sin tener que iniciar sesion como el en el mismo celular.
+- **Crear jugador propio**: repartir tú mismo los 11 puntos entre las 5 habilidades (jugador de campo/capitan) o los 7 puntos entre las 4 de arquero.
+- **Modo 2 jugadores con cuentas propias**: al arrancar un partido hotseat, si escribes el nombre de una cuenta real en "Equipo B" (por ejemplo la de tu hijo), el partido usa SU equipo y color guardados — sin tener que iniciar sesion como el en el mismo celular.
 
 Todo esto se guarda en [Firebase](https://firebase.google.com) (cuentas + base de datos). Sin configurarlo, el juego funciona igual pero con el equipo por defecto de siempre — ver `docs/FIREBASE_SETUP.md` para activarlo.
 
@@ -103,6 +103,6 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 3. **Llevarlo a las tiendas de apps**: envolver esta misma pagina con [Capacitor](https://capacitorjs.com/) (`npx cap init`, `npx cap add android`, `npx cap add ios`) genera un proyecto nativo listo para Android Studio / Xcode sin reescribir el juego. Para publicarlo hace falta una cuenta de Google Play Console (pago unico) y/o Apple Developer Program (anual), mas las claves de firma.
 4. **Modo online**: jugar contra alguien en otro celular en vez de compartir la pantalla (Firebase ya deja la base puesta con Firestore, se podria usar para sincronizar la partida).
 
-## Para vos, que segui el proyecto
+## Para ti, que sigues el proyecto
 
 Este prototipo arranco del `.html` original que ya tenian en la carpeta de Drive del proyecto y le sumo: las habilidades de los jugadores, el sistema de defensa/intercepcion, la zona fantasma, los 10 poderes completos (antes solo habia 2), el modo contra la PC, y la parte de "se siente como una app" (nombres de equipo, sonido, vibracion, instalable en el celular). El codigo esta comentado por seccion siguiendo los mismos numeros que `docs/REGLAS_v1.0.md`, para que sea facil encontrar donde esta implementada cada regla.
