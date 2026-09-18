@@ -10,6 +10,11 @@
 export const FIELD_SKILL_SUM = 11;
 export const KEEPER_SKILL_SUM = 7;
 
+export const TEAM_COLOR_PALETTE = [
+  '#2f6fe0', '#e0432f', '#2fa84f', '#9b59ff',
+  '#ff8c2f', '#2fd0c0', '#ff4fa0', '#ffd23f',
+];
+
 export function sumSkills(skills){
   return Object.values(skills).reduce((a, b) => a + (Number(b) || 0), 0);
 }

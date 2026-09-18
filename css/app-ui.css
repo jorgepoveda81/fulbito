@@ -12,6 +12,12 @@
   padding:10px 12px; color:var(--text); font-family:'Inter'; font-weight:700; font-size:14px; margin-bottom:10px;
 }
 .coins-badge{ font-weight:700; font-size:13px; color:var(--gold); padding:10px 14px; }
+
+.color-swatches{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.color-swatch{
+  width:32px; height:32px; border-radius:50%; border:3px solid transparent; cursor:pointer; padding:0;
+}
+.color-swatch.selected{ border-color:#fff; box-shadow:0 0 0 2px rgba(0,0,0,0.4); }
 .play-btn{ font-size:16px; padding:16px; background:var(--teamA); margin-top:0; }
 .home-blurb{ color:var(--sub); font-size:12.5px; text-align:center; line-height:1.5; padding:0 6px; }
 

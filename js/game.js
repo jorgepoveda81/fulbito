@@ -52,6 +52,14 @@ const GOAL_TOP = H/2 - 60, GOAL_BOTTOM = H/2 + 60;
 const PLAYER_R = 15, CAPTAIN_R = 17, BALL_R = 8;
 const STOP_EPS = 6; // velocidad minima antes de considerar el balon detenido
 
+// Colores de camiseta por equipo (se pueden personalizar desde Mi Equipo, ver setTeamColors)
+let teamColors = { A:'#2f6fe0', B:'#e0432f' };
+function hexToRgba(hex, alpha){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 // ============================================================================
 // SECCION 3 — Habilidades
 // Jugador de campo / capitan: Fuerza, Pase, Precision, Tiro, Defensa (suman 11)
@@ -72,9 +80,9 @@ function gkSkills(total){
   return { altura:base[0], velocidad:base[1], volada:base[2], salto:base[3] };
 }
 
-function mkPlayer(team, role, x, y, isCaptain, isKeeper){
+function mkPlayer(team, role, x, y, isCaptain, isKeeper, jersey){
   return {
-    team, role, x, y, homeX:x, homeY:y, isCaptain:!!isCaptain, isKeeper:!!isKeeper,
+    team, role, x, y, homeX:x, homeY:y, isCaptain:!!isCaptain, isKeeper:!!isKeeper, jersey,
     r: isCaptain ? CAPTAIN_R : PLAYER_R,
     skills: isKeeper ? gkSkills(settings.gkSkillTotal) : { ...FIELD_SKILL_PRESETS[isCaptain ? 'captain' : role] },
   };
@@ -83,21 +91,21 @@ function mkPlayer(team, role, x, y, isCaptain, isKeeper){
 let players = [];
 function resetPlayers(){
   players = [
-    mkPlayer('A','keeper', 30,260, false, true),
-    mkPlayer('A','def',   140,150),
-    mkPlayer('A','def',   140,370),
-    mkPlayer('A','mid',   280,110),
-    mkPlayer('A','mid',   280,410),
-    mkPlayer('A','fwd',   400,260),
-    mkPlayer('A','fwd',   430,260, true),
+    mkPlayer('A','keeper', 30,260, false, true, '1'),
+    mkPlayer('A','def',   140,150, false, false, '2'),
+    mkPlayer('A','def',   140,370, false, false, '3'),
+    mkPlayer('A','mid',   280,110, false, false, '4'),
+    mkPlayer('A','mid',   280,410, false, false, '5'),
+    mkPlayer('A','fwd',   400,260, false, false, '6'),
+    mkPlayer('A','fwd',   430,260, true,  false, 'C'),
 
-    mkPlayer('B','keeper', 870,260, false, true),
-    mkPlayer('B','def',   760,150),
-    mkPlayer('B','def',   760,370),
-    mkPlayer('B','mid',   620,110),
-    mkPlayer('B','mid',   620,410),
-    mkPlayer('B','fwd',   500,260),
-    mkPlayer('B','fwd',   470,260, true),
+    mkPlayer('B','keeper', 870,260, false, true, '1'),
+    mkPlayer('B','def',   760,150, false, false, '2'),
+    mkPlayer('B','def',   760,370, false, false, '3'),
+    mkPlayer('B','mid',   620,110, false, false, '4'),
+    mkPlayer('B','mid',   620,410, false, false, '5'),
+    mkPlayer('B','fwd',   500,260, false, false, '6'),
+    mkPlayer('B','fwd',   470,260, true,  false, 'C'),
   ];
   applyFormation('A');
   applyFormation('B');
@@ -125,26 +133,25 @@ function otherTeam(team){ return team==='A' ? 'B' : 'A'; }
 // ============================================================================
 // SECCION 2 — Formacion previa al partido
 // Los 5 jugadores fijos de campo (sin contar arquero ni capitan) se ubican a
-// mano antes de cada partido, respetando los limites de zona del documento:
-// baja max 3, media max 2, alta max 2. El arquero y el capitan tienen su
-// posicion de inicio fija segun las reglas (seccion 2 y 6) y no se arrastran.
+// mano antes de cada partido, en cualquier parte de LA CANCHA ENTERA (no solo
+// el campo propio), respetando los limites de zona del documento: baja max 3,
+// media max 2, alta max 2. La zona se calcula por que tan avanzado esta el
+// jugador hacia el arco rival, no por en que mitad esta parado. El arquero y
+// el capitan tienen su posicion de inicio fija segun las reglas (seccion 2 y
+// 6) y no se arrastran.
 // ============================================================================
 const ZONE_CAPS = { baja:3, media:2, alta:2 };
 function draggablePlayers(team){
   return players.filter(p => p.team===team && !p.isCaptain && !p.isKeeper);
 }
 function bandOf(team, x){
-  if (team === 'A'){
-    if (x < 190) return 'baja';
-    if (x < 330) return 'media';
-    return 'alta';
-  }
-  if (x > 710) return 'baja';
-  if (x > 570) return 'media';
+  const advance = team==='A' ? x : (W - x); // 0 = en el propio arco, W = en el arco rival
+  if (advance < W/3) return 'baja';
+  if (advance < (2*W)/3) return 'media';
   return 'alta';
 }
 function clampFormationX(team, x){
-  return team==='A' ? clamp(x, 55, 430) : clamp(x, 470, 845);
+  return clamp(x, 40, W-40);
 }
 function applyFormation(team){
   const saved = state.formation[team];
@@ -212,6 +219,7 @@ const state = {
   ghostZones: { A:null, B:null },
   formation: { A:null, B:null },
   formingTeam: 'A',
+  formationStep: 'players', // 'players' | 'ghost'
   penalty: null,
   pendingSinglePenalty: null, // {forTeam} — penal por zona fantasma descubierta
 };
@@ -244,7 +252,7 @@ const audio = (function(){
     osc.connect(gain); gain.connect(c.destination);
     osc.start(t0); osc.stop(t0+dur+0.02);
   }
-  function noiseBurst(dur, gainPeak, delay){
+  function noiseBurst(dur, gainPeak, delay, sweep){
     const c = ensure(); if (!c) return;
     const t0 = c.currentTime + (delay||0);
     const bufferSize = Math.floor(c.sampleRate*dur);
@@ -252,13 +260,39 @@ const audio = (function(){
     const data = buffer.getChannelData(0);
     for (let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * (1 - i/bufferSize);
     const src = c.createBufferSource(); src.buffer = buffer;
-    const filter = c.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=1200;
+    const filter = c.createBiquadFilter(); filter.type='bandpass';
+    if (sweep){
+      filter.frequency.setValueAtTime(sweep.from, t0);
+      filter.frequency.linearRampToValueAtTime(sweep.to, t0+dur);
+      filter.Q.value = 0.7;
+    } else {
+      filter.frequency.value = 1200;
+    }
     const gain = c.createGain();
     gain.gain.setValueAtTime(0.0001,t0);
     gain.gain.exponentialRampToValueAtTime(gainPeak||0.25, t0+0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
     src.connect(filter); filter.connect(gain); gain.connect(c.destination);
     src.start(t0); src.stop(t0+dur);
+  }
+  function horn(delay){
+    const c = ensure(); if (!c) return;
+    [0, 0.22].forEach(off => {
+      const t0 = c.currentTime + (delay||0) + off;
+      const osc = c.createOscillator(); const osc2 = c.createOscillator(); const gain = c.createGain();
+      osc.type = 'sawtooth'; osc2.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, t0); osc2.frequency.setValueAtTime(303, t0); // ligero detune = mas "grande"
+      osc.frequency.exponentialRampToValueAtTime(340, t0+0.18);
+      osc2.frequency.exponentialRampToValueAtTime(343, t0+0.18);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.22, t0+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0+0.2);
+      osc.connect(gain); osc2.connect(gain); gain.connect(c.destination);
+      osc.start(t0); osc.stop(t0+0.22); osc2.start(t0); osc2.stop(t0+0.22);
+    });
+  }
+  function chord(freqs, dur, type, gainPeak, delay){
+    freqs.forEach(f => tone(f, dur, type, gainPeak, delay));
   }
   return {
     unlock(){ ensure(); },
@@ -267,8 +301,10 @@ const audio = (function(){
     intercept(){ tone(420,0.1,'square',0.15); },
     save(){ tone(140,0.15,'sawtooth',0.2); },
     goal(){
-      [0,0.09,0.18].forEach((d,i)=>tone(440+i*220, 0.35, 'sawtooth', 0.18, d));
-      noiseBurst(0.9, 0.12, 0.05); // "ola" de gente
+      horn(0);
+      [0.42,0.51,0.60,0.69].forEach((d,i)=>tone(392+i*160, 0.22, 'triangle', 0.16, d));
+      chord([523,659,784], 0.9, 'sawtooth', 0.16, 0.72); // acorde final triunfal
+      noiseBurst(1.6, 0.16, 0.08, { from:400, to:2600 }); // ola de gente creciendo
     },
   };
 })();
@@ -291,6 +327,14 @@ function placeGhostZone(team){
   }
   y = marginY + GHOST_RADIUS + Math.random() * (H - marginY*2 - GHOST_RADIUS*2);
   return { x, y, revealed:false, team };
+}
+function clampGhostPos(team, x, y){
+  const marginX = 100, marginY = 70;
+  const cx = team === 'A'
+    ? clamp(x, marginX+GHOST_RADIUS, W/2-40-GHOST_RADIUS)
+    : clamp(x, W/2+40+GHOST_RADIUS, W-marginX-GHOST_RADIUS);
+  const cy = clamp(y, marginY+GHOST_RADIUS, H-marginY-GHOST_RADIUS);
+  return { x:cx, y:cy };
 }
 
 // ============================================================================
@@ -369,35 +413,51 @@ function beginFormation(){
   resetPlayers();
   state.phase = 'formation';
   state.formingTeam = 'A';
+  state.formationStep = 'players';
+  state.ghostZones = { A: placeGhostZone('A'), B: placeGhostZone('B') }; // arrancan al azar, se pueden reubicar
   ball.x = W/2; ball.y = H/2;
   formationBar.classList.remove('hidden');
   renderFormationBar();
 }
 function renderFormationBar(){
-  fbTitle.textContent = `${teamName(state.formingTeam)}: arrastra tus jugadores a su lugar`;
+  if (state.formationStep === 'players'){
+    fbTitle.textContent = `${teamName(state.formingTeam)}: arrastra tus jugadores a su lugar`;
+    fbReady.textContent = 'Listo, elegir zona fantasma ▶';
+  } else {
+    fbTitle.textContent = `${teamName(state.formingTeam)}: toca tu mitad para esconder tu zona fantasma`;
+    fbReady.textContent = 'Confirmar zona fantasma ▶';
+  }
   updateFormationZoneCounts();
 }
 function updateFormationZoneCounts(){
   const team = state.formingTeam;
   const counts = { baja:0, media:0, alta:0 };
   draggablePlayers(team).forEach(p => counts[bandOf(team,p.x)]++);
-  fbZones.innerHTML =
-    `<span>Zona baja ${counts.baja}/${ZONE_CAPS.baja}</span>`+
-    `<span>Zona media ${counts.media}/${ZONE_CAPS.media}</span>`+
-    `<span>Zona alta ${counts.alta}/${ZONE_CAPS.alta}</span>`;
+  fbZones.innerHTML = state.formationStep==='players'
+    ? `<span>Zona baja ${counts.baja}/${ZONE_CAPS.baja}</span>`+
+      `<span>Zona media ${counts.media}/${ZONE_CAPS.media}</span>`+
+      `<span>Zona alta ${counts.alta}/${ZONE_CAPS.alta}</span>`
+    : `<span>Nadie mas la ve. Se descubre sola si el balon del rival cae justo ahi.</span>`;
 }
 fbReady.onclick = () => {
-  saveFormation(state.formingTeam);
+  if (state.formationStep === 'players'){
+    saveFormation(state.formingTeam);
+    state.formationStep = 'ghost';
+    renderFormationBar();
+    return;
+  }
   if (state.formingTeam === 'A'){
     if (state.mode === 'vsAI'){
       resetPlayers();
       jitterAutoFormation('B');
       saveFormation('B');
+      // la PC deja su zona fantasma en el lugar al azar con el que arranco
       formationBar.classList.add('hidden');
       startMatch();
       return;
     }
     state.formingTeam = 'B';
+    state.formationStep = 'players';
     resetPlayers(); // reaplica lo de A (guardado) y deja a B con la formacion por defecto para editar
     renderFormationBar();
   } else {
@@ -417,9 +477,16 @@ function canvasPoint(clientX, clientY){
   return { x:(clientX-rect.left)*sx, y:(clientY-rect.top)*sy };
 }
 let formationDrag = null; // { player, startX, startY }
+let ghostDragging = false;
 function formationPointerDown(clientX, clientY){
   const p = canvasPoint(clientX,clientY);
   const team = state.formingTeam;
+  if (state.formationStep === 'ghost'){
+    const pos = clampGhostPos(team, p.x, p.y);
+    state.ghostZones[team].x = pos.x; state.ghostZones[team].y = pos.y;
+    ghostDragging = true;
+    return;
+  }
   let target=null, bestDist=30;
   for (const pl of draggablePlayers(team)){
     const d = Math.hypot(p.x-pl.x, p.y-pl.y);
@@ -428,13 +495,20 @@ function formationPointerDown(clientX, clientY){
   if (target) formationDrag = { player:target, startX:target.x, startY:target.y };
 }
 function formationPointerMove(clientX, clientY){
-  if (!formationDrag) return;
   const p = canvasPoint(clientX,clientY);
+  if (state.formationStep === 'ghost'){
+    if (!ghostDragging) return;
+    const pos = clampGhostPos(state.formingTeam, p.x, p.y);
+    state.ghostZones[state.formingTeam].x = pos.x; state.ghostZones[state.formingTeam].y = pos.y;
+    return;
+  }
+  if (!formationDrag) return;
   formationDrag.player.x = clampFormationX(state.formingTeam, p.x);
   formationDrag.player.y = clamp(p.y, 34, H-34);
   updateFormationZoneCounts();
 }
 function formationPointerUp(){
+  if (state.formationStep === 'ghost'){ ghostDragging = false; return; }
   if (!formationDrag) return;
   const team = state.formingTeam;
   const player = formationDrag.player;
@@ -637,11 +711,19 @@ function auraRadiusFor(p){
   if (state.auraBoost && state.auraBoost.player === p) return settings.auraRadius * state.auraBoost.factor;
   return settings.auraRadius;
 }
+let ballTrail = [];
 function updateBall(dt){
   if (!ball.flying) return;
   ball.x += ball.vx*dt; ball.y += ball.vy*dt;
   ball.vx *= Math.pow(settings.friction, dt*60);
   ball.vy *= Math.pow(settings.friction, dt*60);
+
+  if (Math.hypot(ball.vx,ball.vy) > settings.maxSpeed*0.35){
+    ballTrail.push({ x:ball.x, y:ball.y });
+    if (ballTrail.length > 7) ballTrail.shift();
+  } else if (ballTrail.length){
+    ballTrail.shift();
+  }
 
   if (ball.y - BALL_R < 0){ ball.y = BALL_R; ball.vy *= -1; }
   if (ball.y + BALL_R > H){ ball.y = H-BALL_R; ball.vy *= -1; }
@@ -802,6 +884,7 @@ function resolveEndpoint(){
 // Turnos
 // ============================================================================
 function startTurn(team, holder){
+  ballTrail = [];
   // Racha de pases (poder "Farmear aura"): sigue si el mismo equipo conserva el balon
   // por una accion clasificada como pase; se corta si cambia de equipo o fue un tiro.
   if (team === state.turnTeam && state.lastActionType === 'pase'){
@@ -833,11 +916,13 @@ function handleTurnTimeout(){
 function scoreGoal(team){
   ball.flying=false; ball.vx=0; ball.vy=0;
   state.phase='goalPause';
-  if (state.penalty){ registerPenaltyGoal(team); return; }
+  // El penal por zona fantasma (single) se resuelve aparte: no tiene kicksLeft
+  // como la tanda de penales (shootout), asi que hay que revisarlo primero.
   if (state.pendingSinglePenalty){ resolveSinglePenaltyGoal(team); return; }
+  if (state.penalty){ registerPenaltyGoal(team); return; }
   if (team==='A') state.scoreA++; else state.scoreB++;
   updateScoreboard();
-  flashMessage('&#9917; ¡GOOOOL!', `${teamName(team)} marca`, 1700);
+  flashMessage('&#9917; ¡GOOOOL!', `${teamName(team)} marca`, 1700, true);
   spawnConfetti(team==='A' ? W-40 : 40, H/2);
   spawnConfetti(W/2, H/2);
   triggerShake(9);
@@ -868,7 +953,7 @@ function resolveSinglePenaltyGoal(team){
   if (team === state.penalty.kickingTeam){
     if (team==='A') state.scoreA++; else state.scoreB++;
     updateScoreboard();
-    flashMessage('&#9917; ¡GOL de penal!', '', 1500);
+    flashMessage('&#9917; ¡GOL de penal!', '', 1500, true);
   }
   const kicking = state.penalty.kickingTeam;
   state.penalty = null;
@@ -908,10 +993,12 @@ function setupPenaltyKick(forTeamArg, defTeamArg, mode){
   ball.x = cap.x; ball.y = cap.y; ball.vx=0; ball.vy=0; ball.flying=false;
   state.holder = cap; state.turnTeam = kicking; state.shooterTeam = kicking;
   lastShooterRef = cap;
-  state.turnTimeLeft = 12;
+  // Bonus de la seccion 10: descubrir la zona fantasma rival da unos segundos extra para patear.
+  state.turnTimeLeft = mode === 'single' ? 12 + 5 : 12;
   state.phase = 'aiming';
   const leftText = state.penalty.mode==='shootout' ? ` &middot; quedan ${state.penalty.kicksLeft[kicking]}` : '';
-  flashMessage(`Penal &mdash; ${teamName(kicking)}`, `Patea el capitan${leftText}`, 1200);
+  const bonusText = mode === 'single' ? ' &middot; +5s por descubrirla' : '';
+  flashMessage(`Penal &mdash; ${teamName(kicking)}`, `Patea el capitan${leftText}${bonusText}`, 1200);
 }
 function registerPenaltyGoal(team){
   const p = state.penalty;
@@ -951,11 +1038,14 @@ const msgOverlay = document.getElementById('msgOverlay');
 const msgMain = document.getElementById('msgMain');
 const msgSub = document.getElementById('msgSub');
 let msgTimer=null;
-function flashMessage(main, sub, ms){
+function flashMessage(main, sub, ms, big){
   msgMain.innerHTML = main; msgSub.innerHTML = sub||'';
+  msgOverlay.classList.remove('show','msg-goal');
+  void msgOverlay.offsetWidth; // fuerza a reiniciar la animacion si se repite el mismo mensaje
   msgOverlay.classList.add('show');
+  if (big) msgOverlay.classList.add('msg-goal');
   clearTimeout(msgTimer);
-  msgTimer = setTimeout(()=>msgOverlay.classList.remove('show'), ms||1000);
+  msgTimer = setTimeout(()=>msgOverlay.classList.remove('show','msg-goal'), ms||1000);
 }
 
 // ============================================================================
@@ -997,7 +1087,7 @@ function endMatch(){
 // ============================================================================
 let confetti = [];
 let shake = { time:0, mag:0 };
-const CONFETTI_COLORS = ['#ffc94d','#2f6fe0','#e0432f','#ffffff','#4ade80'];
+function confettiColors(){ return ['#ffc94d', teamColors.A, teamColors.B, '#ffffff', '#4ade80']; }
 function spawnConfetti(x, y){
   for (let i=0;i<46;i++){
     const ang = Math.random()*Math.PI*2;
@@ -1005,7 +1095,7 @@ function spawnConfetti(x, y){
     confetti.push({
       x, y,
       vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd - 120,
-      life: 1, color: CONFETTI_COLORS[i%CONFETTI_COLORS.length],
+      life: 1, color: confettiColors()[i%5],
       size: 3+Math.random()*3, spin: Math.random()*Math.PI*2, spinV:(Math.random()-0.5)*10,
     });
   }
@@ -1044,6 +1134,7 @@ function draw(){
   ctx.clearRect(-20,-20,W+40,H+40);
   drawField();
   if (settings.debugGhost) drawGhostZones();
+  if (state.phase==='formation' && state.formationStep==='ghost') drawGhostPlacementPreview();
   drawFormationGuides();
   drawAuras();
   drawPlayers();
@@ -1063,19 +1154,40 @@ function drawField(){
   ctx.strokeRect(6,6,W-12,H-12);
   ctx.beginPath(); ctx.moveTo(W/2,6); ctx.lineTo(W/2,H-6); ctx.stroke();
   ctx.beginPath(); ctx.arc(W/2,H/2,55,0,Math.PI*2); ctx.stroke();
-  ctx.lineWidth=4;
-  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-  ctx.beginPath(); ctx.moveTo(6,GOAL_TOP); ctx.lineTo(6,GOAL_BOTTOM); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(W-6,GOAL_TOP); ctx.lineTo(W-6,GOAL_BOTTOM); ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,0.06)';
+  // area chica: marca el terreno del arquero, para que se note mejor donde esta el arco
+  const boxH = (GOAL_BOTTOM-GOAL_TOP) + 50, boxY = H/2 - boxH/2, boxW = 85;
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth=2;
+  ctx.strokeRect(6, boxY, boxW, boxH);
+  ctx.strokeRect(W-6-boxW, boxY, boxW, boxH);
+  // profundidad detras de la linea de gol
+  ctx.fillStyle='rgba(0,0,0,0.22)';
   ctx.fillRect(0,GOAL_TOP,26,GOAL_BOTTOM-GOAL_TOP);
   ctx.fillRect(W-26,GOAL_TOP,26,GOAL_BOTTOM-GOAL_TOP);
-  // redes (cuadricula diagonal, solo estetico)
-  ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=1;
-  for(let i=-4;i<=4;i++){
-    ctx.beginPath(); ctx.moveTo(0,GOAL_TOP+ i*15 + (GOAL_BOTTOM-GOAL_TOP)/2); ctx.lineTo(26, GOAL_TOP+(GOAL_BOTTOM-GOAL_TOP)/2 + i*15 - 20); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(W,GOAL_TOP+ i*15 + (GOAL_BOTTOM-GOAL_TOP)/2); ctx.lineTo(W-26, GOAL_TOP+(GOAL_BOTTOM-GOAL_TOP)/2 + i*15 - 20); ctx.stroke();
+  // red: cuadricula prolija en vez de diagonal, se lee mejor como arco
+  ctx.strokeStyle='rgba(255,255,255,0.28)'; ctx.lineWidth=1;
+  const netCols=5, netRows=8, goalH=GOAL_BOTTOM-GOAL_TOP;
+  for(let i=0;i<=netCols;i++){
+    const gx=i*(26/netCols);
+    ctx.beginPath(); ctx.moveTo(gx,GOAL_TOP); ctx.lineTo(gx,GOAL_BOTTOM); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W-gx,GOAL_TOP); ctx.lineTo(W-gx,GOAL_BOTTOM); ctx.stroke();
   }
+  for(let j=0;j<=netRows;j++){
+    const gy=GOAL_TOP+j*(goalH/netRows);
+    ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(26,gy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W-26,gy); ctx.lineTo(W,gy); ctx.stroke();
+  }
+  // postes bien marcados, con remate redondeado arriba y abajo
+  ctx.lineWidth=5;
+  ctx.strokeStyle = '#ffffff';
+  ctx.shadowColor='rgba(255,255,255,0.6)'; ctx.shadowBlur=6;
+  ctx.beginPath(); ctx.moveTo(6,GOAL_TOP); ctx.lineTo(6,GOAL_BOTTOM); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W-6,GOAL_TOP); ctx.lineTo(W-6,GOAL_BOTTOM); ctx.stroke();
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#ffffff';
+  [GOAL_TOP,GOAL_BOTTOM].forEach(gy=>{
+    ctx.beginPath(); ctx.arc(6,gy,5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W-6,gy,5,0,Math.PI*2); ctx.fill();
+  });
   // arcos de esquina
   ctx.strokeStyle='rgba(238,247,240,0.6)'; ctx.lineWidth=2;
   [[6,6,0,Math.PI/2],[W-6,6,Math.PI/2,Math.PI],[6,H-6,-Math.PI/2,0],[W-6,H-6,Math.PI,Math.PI*1.5]]
@@ -1088,10 +1200,24 @@ function drawGhostZones(){
     ctx.beginPath();
     ctx.setLineDash([6,5]);
     ctx.arc(z.x,z.y,GHOST_RADIUS,0,Math.PI*2);
-    ctx.strokeStyle = z.revealed ? 'rgba(255,255,255,0.6)' : (team==='A' ? 'rgba(47,111,224,0.5)' : 'rgba(224,67,47,0.5)');
+    ctx.strokeStyle = z.revealed ? 'rgba(255,255,255,0.6)' : hexToRgba(teamColors[team], 0.5);
     ctx.lineWidth=2; ctx.stroke();
     ctx.setLineDash([]);
   });
+}
+function drawGhostPlacementPreview(){
+  const z = state.ghostZones[state.formingTeam];
+  if (!z) return;
+  ctx.beginPath();
+  ctx.arc(z.x,z.y,GHOST_RADIUS,0,Math.PI*2);
+  ctx.fillStyle = 'rgba(155,89,255,0.18)';
+  ctx.fill();
+  ctx.setLineDash([6,5]);
+  ctx.strokeStyle = 'rgba(155,89,255,0.85)'; ctx.lineWidth=2.5;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(155,89,255,0.9)'; ctx.font='11px Inter'; ctx.textAlign='center';
+  ctx.fillText('Tu zona secreta', z.x, z.y+4);
 }
 function formationAlphaFor(p){
   if (state.phase!=='formation') return 1;
@@ -1100,14 +1226,15 @@ function formationAlphaFor(p){
 function drawFormationGuides(){
   if (state.phase!=='formation') return;
   const team = state.formingTeam;
-  const edges = team==='A' ? [190,330] : [710,570];
+  const edges = [W/3, (2*W)/3];
   ctx.save();
   ctx.setLineDash([5,6]);
   ctx.strokeStyle = 'rgba(255,201,77,0.5)'; ctx.lineWidth=1.5;
   edges.forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,10); ctx.lineTo(x,H-10); ctx.stroke(); });
   ctx.restore();
   ctx.fillStyle='rgba(255,201,77,0.75)'; ctx.font='11px Inter'; ctx.textAlign='center';
-  const labelX = team==='A' ? [110,260,390] : [790,640,510];
+  const thirdX = [W/6, W/2, (5*W)/6];
+  const labelX = team==='A' ? thirdX : thirdX.slice().reverse();
   ['Baja','Media','Alta'].forEach((t,i)=>ctx.fillText(t,labelX[i],26));
 }
 function drawAuras(){
@@ -1116,9 +1243,9 @@ function drawAuras(){
     ctx.globalAlpha = formationAlphaFor(p);
     ctx.beginPath();
     ctx.arc(p.x,p.y,auraRadiusFor(p),0,Math.PI*2);
-    ctx.fillStyle = p.team==='A' ? 'rgba(47,111,224,0.10)' : 'rgba(224,67,47,0.10)';
+    ctx.fillStyle = hexToRgba(teamColors[p.team], 0.10);
     ctx.fill();
-    ctx.strokeStyle = p.team==='A' ? 'rgba(47,111,224,0.45)' : 'rgba(224,67,47,0.45)';
+    ctx.strokeStyle = hexToRgba(teamColors[p.team], 0.45);
     ctx.lineWidth=1.5;
     ctx.stroke();
     ctx.globalAlpha = 1;
@@ -1131,10 +1258,15 @@ function drawPlayers(){
     const isDraggable = state.phase==='formation' && p.team===state.formingTeam && !p.isCaptain && !p.isKeeper;
     ctx.globalAlpha = formationAlphaFor(p);
     ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fillStyle = p.team==='A' ? '#2f6fe0' : '#e0432f';
-    if (p.isCaptain){ ctx.fillStyle = p.team==='A' ? '#4a86ff' : '#ff5c45'; }
+    ctx.ellipse(p.x, p.y+p.r*0.6, p.r*0.95, p.r*0.4, 0, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
     ctx.fill();
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle = teamColors[p.team];
+    if (p.isCaptain){ ctx.shadowColor = teamColors[p.team]; ctx.shadowBlur = 8; }
+    ctx.fill();
+    ctx.shadowBlur = 0;
     ctx.lineWidth = p.isKeeper ? 3 : 2;
     ctx.strokeStyle = '#0b0e10';
     ctx.stroke();
@@ -1150,9 +1282,8 @@ function drawPlayers(){
       ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
       ctx.setLineDash([]);
     }
-    ctx.fillStyle='#fff'; ctx.font='10px Inter'; ctx.textAlign='center';
-    const label = p.isCaptain ? 'C' : (p.isKeeper ? 'A' : '');
-    if (label) ctx.fillText(label,p.x,p.y+3);
+    ctx.fillStyle='#fff'; ctx.font='bold 12px Inter'; ctx.textAlign='center';
+    if (p.jersey) ctx.fillText(p.jersey,p.x,p.y+4);
     ctx.globalAlpha = 1;
   }
 }
@@ -1181,6 +1312,14 @@ function drawAimAndPower(){
   ctx.strokeStyle='#fff'; ctx.lineWidth=1; ctx.strokeRect(bx,by,barW,barH);
 }
 function drawBall(){
+  for (let i=0;i<ballTrail.length;i++){
+    const t = ballTrail[i];
+    const age = (ballTrail.length-i)/ballTrail.length;
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,BALL_R*(1-age*0.4),0,Math.PI*2);
+    ctx.fillStyle = `rgba(255,255,255,${0.22*(1-age)})`;
+    ctx.fill();
+  }
   ctx.beginPath();
   ctx.arc(ball.x,ball.y,BALL_R,0,Math.PI*2);
   ctx.fillStyle='#fff';
@@ -1215,6 +1354,10 @@ function loop(now){
   draw();
   requestAnimationFrame(loop);
 }
+function holderLabel(p){
+  const who = p.displayName ? p.displayName : (p.isCaptain ? 'El capitan' : (p.isKeeper ? 'El arquero' : `Jugador ${p.jersey}`));
+  return `#${p.jersey} ${who}`;
+}
 function updateHud(){
   const label = document.getElementById('turnLabel');
   const dot = document.getElementById('turnDot');
@@ -1236,7 +1379,7 @@ function updateHud(){
   const pct = state.phase==='formation' ? 100 : Math.max(0, state.turnTimeLeft/settings.turnSeconds)*100;
   bar.style.width = pct+'%';
   capInfo.textContent = state.phase==='formation' ? 'Arrastra los jugadores con borde punteado' :
-    (state.holder ? (state.holder.isCaptain ? 'El capitan tiene el balon' : (state.holder.isKeeper ? 'El arquero tiene el balon' : 'Jugador de campo')) : '-');
+    (state.holder ? holderLabel(state.holder) : '-');
   updatePowerButtons();
 }
 
@@ -1258,7 +1401,7 @@ function startMatch(){
   state.moveCaptainMode = { A:false, B:false };
   state.penalty = null;
   state.pendingSinglePenalty = null;
-  state.ghostZones = { A: placeGhostZone('A'), B: placeGhostZone('B') };
+  // las zonas fantasma ya se eligieron a mano durante la formacion (beginFormation)
   state.phase='aiming';
   updateScoreboard();
   renderPowerButtons();
@@ -1341,6 +1484,12 @@ function updateAI(dt){
 window.FulbitoGame = {
   // roster: arreglo de 7 {skills, name} (arquero, def, def, mid, mid, fwd, capitan) o null para volver al preset por defecto
   setPlayerRoster(roster){ rosterOverrideA = roster; },
+  // colors: { A: '#rrggbb', B: '#rrggbb' } — cualquiera de los dos puede omitirse
+  setTeamColors(colors){
+    teamColors = { ...teamColors, ...(colors||{}) };
+    document.documentElement.style.setProperty('--teamA', teamColors.A);
+    document.documentElement.style.setProperty('--teamB', teamColors.B);
+  },
   showModeMenu(){ mainMenuOverlay.classList.remove('hidden'); },
 };
 

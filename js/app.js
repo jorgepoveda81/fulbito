@@ -1,9 +1,12 @@
 // Punto de entrada: arranca la sesion, arma las 3 pestañas (Inicio/Mi Equipo/Tienda)
 // y hace de puente entre esas pantallas y el motor del partido en js/game.js.
-import { initAuth, recordMatchResult } from './auth.js';
+import { initAuth, recordMatchResult, getCurrentUser } from './auth.js';
 import { initHomeScreen } from './menu-ui.js';
 import { initTeamScreen, buildRosterOverride } from './team-ui.js';
 import { initStoreScreen } from './store-ui.js';
+
+const DEFAULT_COLOR_A = '#2f6fe0';
+const DEFAULT_COLOR_B = '#e0432f'; // fijo por ahora: el Equipo B en hotseat/vsAI todavia no tiene cuenta propia (ver tarea "Selector de Jugador 2")
 
 const appShell = document.getElementById('appShell');
 const gameRoot = document.getElementById('gameRoot');
@@ -24,6 +27,12 @@ tabs.forEach(tab => {
 async function goPlay(){
   const roster = await buildRosterOverride();
   window.FulbitoGame.setPlayerRoster(roster); // null si no hay cuenta/equipo guardado: usa el preset de siempre
+
+  const user = getCurrentUser();
+  let colorA = (user && user.color) || DEFAULT_COLOR_A;
+  if (colorA === DEFAULT_COLOR_B) colorA = DEFAULT_COLOR_A; // no pueden coincidir con el Equipo B
+  window.FulbitoGame.setTeamColors({ A: colorA, B: DEFAULT_COLOR_B });
+
   appShell.classList.add('hidden');
   gameRoot.classList.remove('hidden');
   window.FulbitoGame.showModeMenu();

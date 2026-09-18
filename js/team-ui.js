@@ -1,7 +1,8 @@
 // Pantalla "Mi Equipo": elegir que jugador de tu coleccion va en cada puesto.
-import { getCurrentUser, onAuthChange, setUsername, getAuthStatus } from './auth.js';
+import { getCurrentUser, onAuthChange, setUsername, setColor, getAuthStatus } from './auth.js';
 import { listOwnedPlayers, getTeam, saveTeam, grantStarterRosterIfEmpty } from './player-repo.js';
 import { renderPlayerCreator } from './player-creator.js';
+import { TEAM_COLOR_PALETTE } from './store-data.js';
 
 const SLOTS = [
   { key: 'keeper', label: 'Arquero', type: 'keeper' },
@@ -37,6 +38,10 @@ async function renderTeamScreen(container){
     <div class="profile-card">
       <label>Tu nombre de jugador</label>
       <input type="text" id="teamUsername" maxlength="16" placeholder="Ponete un nombre" value="${escapeHtml(user.username||'')}">
+      <label>Color de tu equipo</label>
+      <div class="color-swatches" id="colorSwatches">
+        ${TEAM_COLOR_PALETTE.map(c => `<button class="color-swatch ${c===(user.color||'#2f6fe0')?'selected':''}" style="background:${c}" data-color="${c}" aria-label="${c}"></button>`).join('')}
+      </div>
     </div>
     <div class="coins-badge">&#129689; ${user.coins||0} monedas &middot; ${user.wins||0}V ${user.draws||0}E ${user.losses||0}D</div>
     <div class="roster-card">
@@ -53,6 +58,13 @@ async function renderTeamScreen(container){
   `;
 
   container.querySelector('#teamUsername').onchange = e => setUsername(e.target.value.trim().slice(0,16));
+  container.querySelectorAll('.color-swatch').forEach(btn => {
+    btn.onclick = () => {
+      container.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      setColor(btn.dataset.color);
+    };
+  });
 
   const slotsEl = container.querySelector('#rosterSlots');
   SLOTS.forEach(slot => {

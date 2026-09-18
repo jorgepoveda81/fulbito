@@ -41,7 +41,7 @@ export async function initAuth(){
       const ref = fsMod.doc(db, 'profiles', user.uid);
       let snap = await fsMod.getDoc(ref);
       if (!snap.exists()){
-        await fsMod.setDoc(ref, { username: '', coins: 50, wins: 0, losses: 0, draws: 0, createdAt: Date.now() });
+        await fsMod.setDoc(ref, { username: '', coins: 50, wins: 0, losses: 0, draws: 0, color: '#2f6fe0', createdAt: Date.now() });
         snap = await fsMod.getDoc(ref);
       }
       currentUser = { uid: user.uid, ...snap.data() };
@@ -62,6 +62,15 @@ export async function setUsername(name){
   const { db, fsMod } = fb;
   await fsMod.updateDoc(fsMod.doc(db, 'profiles', currentUser.uid), { username: name });
   currentUser.username = name;
+  notify();
+}
+
+export async function setColor(color){
+  const fb = await getFirebase();
+  if (!fb || !currentUser) return;
+  const { db, fsMod } = fb;
+  await fsMod.updateDoc(fsMod.doc(db, 'profiles', currentUser.uid), { color });
+  currentUser.color = color;
   notify();
 }
 
