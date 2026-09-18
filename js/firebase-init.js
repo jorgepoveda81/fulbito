@@ -2,12 +2,12 @@
 // Ver docs/FIREBASE_SETUP.md para los pasos. Mientras digan "TU_API_KEY", el resto
 // de la app sigue funcionando en modo local (sin cuentas ni tienda guardada en linea).
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROYECTO.firebaseapp.com",
-  projectId: "TU_PROYECTO",
-  storageBucket: "TU_PROYECTO.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000000000",
+  apiKey: "AIzaSyC-YOuehNcZPsNiEGVqis288KZ4wLmwacs",
+  authDomain: "fulbito-91dc8.firebaseapp.com",
+  projectId: "fulbito-91dc8",
+  storageBucket: "fulbito-91dc8.firebasestorage.app",
+  messagingSenderId: "265856078206",
+  appId: "1:265856078206:web:25d5441006f50d2d85a32f",
 };
 
 const SDK = "https://www.gstatic.com/firebasejs/10.14.1";

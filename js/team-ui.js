@@ -1,6 +1,5 @@
 // Pantalla "Mi Equipo": elegir que jugador de tu coleccion va en cada puesto.
-import { isFirebaseConfigured } from './firebase-init.js';
-import { getCurrentUser, onAuthChange, setUsername } from './auth.js';
+import { getCurrentUser, onAuthChange, setUsername, getAuthStatus } from './auth.js';
 import { listOwnedPlayers, getTeam, saveTeam, grantStarterRosterIfEmpty } from './player-repo.js';
 import { renderPlayerCreator } from './player-creator.js';
 
@@ -20,10 +19,13 @@ export function initTeamScreen(container){
 }
 
 async function renderTeamScreen(container){
-  if (!isFirebaseConfigured){
+  const { status, error } = getAuthStatus();
+  if (status === 'unconfigured'){
     container.innerHTML = `<div class="notice-card">Todavia falta configurar Firebase para guardar tu equipo (ver <code>docs/FIREBASE_SETUP.md</code>). Mientras tanto el partido usa el equipo por defecto.</div>`;
     return;
   }
+  if (status === 'loading'){ container.innerHTML = `<div class="notice-card">Conectando tu cuenta...</div>`; return; }
+  if (status === 'failed'){ container.innerHTML = `<div class="notice-card">&#9888; ${error}</div>`; return; }
   const user = getCurrentUser();
   if (!user){ container.innerHTML = `<div class="notice-card">Conectando tu cuenta...</div>`; return; }
 
@@ -114,7 +116,7 @@ function escapeHtml(str){
 
 // Convierte el equipo guardado al formato que espera game.js (7 posiciones en orden fijo).
 export async function buildRosterOverride(){
-  if (!isFirebaseConfigured || !getCurrentUser()) return null;
+  if (getAuthStatus().status !== 'ready' || !getCurrentUser()) return null;
   const [owned, team] = await Promise.all([listOwnedPlayers(), getTeam()]);
   if (!team) return null;
   const order = ['keeper','def1','def2','mid1','mid2','fwd','captain'];

@@ -1,6 +1,5 @@
 // Pantalla "Tienda": comprar jugadores con monedas ganadas jugando (sin dinero real).
-import { isFirebaseConfigured } from './firebase-init.js';
-import { getCurrentUser, onAuthChange, addCoins } from './auth.js';
+import { getCurrentUser, onAuthChange, addCoins, getAuthStatus } from './auth.js';
 import { listOwnedPlayers, addOwnedPlayer } from './player-repo.js';
 import { STORE_CATALOG } from './store-data.js';
 
@@ -12,10 +11,13 @@ export function initStoreScreen(container){
 }
 
 async function renderStoreScreen(container){
-  if (!isFirebaseConfigured){
+  const { status, error } = getAuthStatus();
+  if (status === 'unconfigured'){
     container.innerHTML = `<div class="notice-card">La tienda necesita que se configure Firebase primero (ver <code>docs/FIREBASE_SETUP.md</code>).</div>`;
     return;
   }
+  if (status === 'loading'){ container.innerHTML = `<div class="notice-card">Conectando tu cuenta...</div>`; return; }
+  if (status === 'failed'){ container.innerHTML = `<div class="notice-card">&#9888; ${error}</div>`; return; }
   const user = getCurrentUser();
   if (!user){ container.innerHTML = `<div class="notice-card">Conectando tu cuenta...</div>`; return; }
 
