@@ -96,7 +96,7 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 - En el modo de 2 jugadores, el Equipo B usa su equipo/color guardados solo si escribiste el nombre de una cuenta real que exista (busqueda de solo lectura); las monedas y estadisticas de esa partida solo se acreditan a la cuenta que esta con la sesion iniciada en el celular (el Equipo A), no al Equipo B.
 - Las monedas se suman desde el navegador al terminar el partido (con `increment()` de Firestore, asi que dos escrituras que se solapan no se pisan entre si); pero alguien que sepa tocar el codigo igual podria llamar a esa funcion mas veces de las debidas y darse monedas de mas — eso solo lo evita una funcion de servidor (Firebase Cloud Functions). Para una cuenta privada entre ustedes dos no es un problema real.
 - La zona fantasma se ubica sola al azar la primera vez, pero se puede reubicar a mano en cualquier parte de la cancha antes de cada partido.
-- El poder "Escudo de aura" solo protege contra "Silencio" por ahora; el resto de los poderes que dice "ignora el efecto de un poder rival" quedan para una version futura mas especifica.
+- El poder "Escudo de aura" bloquea especificamente un "Silencio" rival (antes no hacia nada: el bloqueo nunca se llegaba a chequear). El documento lo describe como "ignora el efecto de un poder rival" en general; una version mas generica que bloquee cualquier poder queda para mas adelante.
 
 ## Proximos pasos sugeridos
 

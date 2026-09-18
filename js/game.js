@@ -664,10 +664,18 @@ function activatePower(team, id){
         flashMessage('Segundo bloqueo listo', '', 800);
       }
       break;
-    case 'silencio':
-      state.silencedNextTurn[otherTeam(team)] = true; markUsed(team,id);
-      flashMessage('Silencio', `${teamName(otherTeam(team))} no puede usar poderes en su proximo turno`, 1100);
+    case 'silencio': {
+      const target = otherTeam(team);
+      markUsed(team,id);
+      if (state.shieldActive[target]){
+        state.shieldActive[target] = false; // el escudo absorbe este Silencio y se gasta
+        flashMessage('&#128737; Escudo de aura', `${teamName(target)} bloqueo el Silencio`, 1100);
+      } else {
+        state.silencedNextTurn[target] = true;
+        flashMessage('Silencio', `${teamName(target)} no puede usar poderes en su proximo turno`, 1100);
+      }
       break;
+    }
     case 'escudo':
       state.shieldActive[team] = true; markUsed(team,id);
       flashMessage('Escudo de aura activo', '', 800);
