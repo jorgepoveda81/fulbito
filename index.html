@@ -175,5 +175,10 @@
 <script src="js/rules-core.js"></script>
 <script src="js/game.js"></script>
 <script type="module" src="js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  }
+</script>
 </body>
 </html>

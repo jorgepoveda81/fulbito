@@ -56,6 +56,7 @@ js/team-ui.js                    pantalla "Mi Equipo"
 js/store-ui.js                   pantalla "Tienda"
 firestore.rules                 reglas de seguridad (cada quien solo ve lo suyo)
 manifest.webmanifest            hace que el juego se pueda "instalar" en el celular
+sw.js                            service worker: cachea el cascaron de la app para que abra sin conexion
 icons/icon.svg                   icono de la app
 docs/REGLAS_v1.0.md              las reglas de diseño del juego
 docs/FIREBASE_SETUP.md           como activar cuentas/tienda
