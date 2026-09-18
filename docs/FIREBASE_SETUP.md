@@ -1,12 +1,12 @@
 # Poner las cuentas y la tienda en linea (Firebase)
 
-FULBITO usa [Firebase](https://firebase.google.com) solo para: cuentas anonimas (sin email ni contraseña), y guardar la coleccion de jugadores y el equipo de cada usuario. No procesa pagos reales — la tienda se paga con monedas que se ganan jugando.
+FULBITO usa [Firebase](https://firebase.google.com) para las cuentas y para guardar la coleccion de jugadores y el equipo de cada usuario. No pide datos reales (nada de email ni telefono): la cuenta es un nombre elegido + un PIN, o directamente "jugar de invitado" sin cuenta. No procesa pagos reales — la tienda se paga con monedas que se ganan jugando.
 
 ## 1. Crear el proyecto (una sola vez)
 
 1. Entra a [console.firebase.google.com](https://console.firebase.google.com) con tu cuenta de Google.
 2. **Crear proyecto** → nombre "Fulbito" → podes desactivar Google Analytics.
-3. **Build → Authentication → Sign-in method** → activa **Anonymous**.
+3. **Build → Authentication → Sign-in method** → activa **Anonymous** (modo invitado) **y** **Email/Password** (para las cuentas con nombre+PIN — el "email" que usa por dentro es inventado, nunca se manda nada a nadie).
 4. **Build → Firestore Database → Create database** → modo **production**.
 5. **Project settings** (el engranaje) → "Your apps" → boton **`</>`** (Web) → nombre "fulbito-web" → **Register app**. Copia el bloque `firebaseConfig`.
 6. Pega ese bloque en `js/firebase-init.js` (reemplaza el objeto `firebaseConfig` que esta ahi con valores de ejemplo).
@@ -16,7 +16,7 @@ FULBITO usa [Firebase](https://firebase.google.com) solo para: cuentas anonimas 
 
 | Coleccion | Documento | Contenido |
 |---|---|---|
-| `profiles` | uno por usuario (id = su uid) | `username`, `coins`, `wins`, `losses`, `draws` |
+| `profiles` | uno por usuario (id = su uid) | `username`, `age`, `color`, `coins`, `wins`, `losses`, `draws` |
 | `players` | uno por jugador que el usuario tiene | `ownerId`, `name`, `role`, `skills` (o `gkSkills` si es arquero), `source` (`store`/`custom`/`starter`) |
 | `teams` | uno por usuario (id = su uid) | `roster`: ids de `players` para cada puesto (`keeper`, `def1`, `def2`, `mid1`, `mid2`, `fwd`, `captain`) |
 

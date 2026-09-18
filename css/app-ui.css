@@ -13,6 +13,13 @@
 }
 .coins-badge{ font-weight:700; font-size:13px; color:var(--gold); padding:10px 14px; }
 
+.auth-toggle{ display:flex; gap:6px; margin-bottom:12px; background:var(--panel2); border-radius:10px; padding:4px; }
+.auth-toggle-btn{
+  flex:1; background:none; border:none; color:var(--sub); font-family:'Inter'; font-weight:700; font-size:12px;
+  padding:8px 6px; border-radius:8px; cursor:pointer;
+}
+.auth-toggle-btn.active{ background:var(--panel); color:var(--gold); }
+
 .color-swatches{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
 .color-swatch{
   width:32px; height:32px; border-radius:50%; border:3px solid transparent; cursor:pointer; padding:0;

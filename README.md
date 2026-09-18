@@ -28,10 +28,11 @@ El jugador que tiene el balon se marca con un anillo dorado. Apunta con el mouse
 
 Ademas del partido en si, FULBITO tiene una app chica alrededor:
 
-- **Cuenta anonima**: se crea sola, sin pedir email ni contraseña — solo un nombre de jugador elegido.
-- **Mi Equipo**: arma tu plantilla de 7 (arquero + 5 de campo + capitan) con los jugadores que tengas.
+- **Cuenta**: jugar de invitado (sin nada, se crea sola), o crear una cuenta con nombre + PIN — sin pedir email ni ningun dato real. Con nombre + PIN podes volver a tu cuenta desde cualquier celular.
+- **Mi Equipo**: arma tu plantilla de 7 (arquero + 5 de campo + capitan), y elegi el color de tu equipo.
 - **Tienda**: jugadores nuevos con otra forma de repartir los mismos puntos (nunca mas fuerte, solo distinto — sin pay to win), comprados con monedas que se ganan jugando partidos, nunca con dinero real.
 - **Crear jugador propio**: repartir vos mismo los 11 puntos entre las 5 habilidades.
+- **Modo 2 jugadores con cuentas propias**: al arrancar un partido hotseat, si escribis el nombre de una cuenta real en "Equipo B" (por ejemplo la de tu hijo), el partido usa SU equipo y color guardados — sin tener que iniciar sesion como el en el mismo celular.
 
 Todo esto se guarda en [Firebase](https://firebase.google.com) (cuentas + base de datos). Sin configurarlo, el juego funciona igual pero con el equipo por defecto de siempre — ver `docs/FIREBASE_SETUP.md` para activarlo.
 
@@ -44,7 +45,8 @@ css/app-ui.css                 estilos de las pantallas de cuenta/equipo/tienda
 js/game.js                     el motor del partido (fisica, reglas, IA, sonido, poderes)
 js/app.js                       arranca todo y conecta las pantallas nuevas con game.js
 js/firebase-init.js             configuracion de Firebase (claves)
-js/auth.js                      cuenta anonima y perfil (nombre, monedas, resultados)
+js/auth.js                      cuentas (invitado o nombre+PIN) y perfil (nombre, monedas, resultados)
+js/auth-ui.js                    pantalla para crear cuenta / iniciar sesion / jugar de invitado
 js/player-repo.js               leer/guardar jugadores propios y el equipo en Firestore
 js/store-data.js                catalogo de jugadores de la tienda + equipo inicial gratis
 js/player-creator.js            creador de jugador propio (repartir 11 puntos)
@@ -78,16 +80,16 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 
 - El tiro es de puntaria libre (arrastrar y soltar), no el sistema de 9 zonas fijas del documento (seccion 9). Se decidio a proposito dejarlo asi.
 - La IA es basica: pasa hacia adelante y tira si esta cerca del arco. No usa poderes ni jugadas elaboradas, y siempre juega con el equipo por defecto (no tiene cuenta propia).
-- El equipo guardado ("Mi Equipo") solo se aplica al Equipo A. En el modo de 2 jugadores en el mismo celular, el Equipo B siempre usa el preset por defecto, porque por ahora las cuentas son una por celular.
+- En el modo de 2 jugadores, el Equipo B usa su equipo/color guardados solo si escribiste el nombre de una cuenta real que exista (busqueda de solo lectura); las monedas y estadisticas de esa partida solo se acreditan a la cuenta que esta con la sesion iniciada en el celular (el Equipo A), no al Equipo B.
 - Solo se pueden crear jugadores de campo/capitan (11 puntos). Crear arqueros personalizados (7 puntos) queda pendiente.
 - Las monedas se suman desde el navegador al terminar el partido; alguien que sepa tocar el codigo podria darse monedas de mas. Para una cuenta privada entre ustedes dos no es un problema real; si en algun momento se abre a mas gente, conviene mover ese calculo a una funcion de servidor (Firebase Cloud Functions).
-- La zona fantasma se ubica sola al azar en la mitad propia; el documento no exige que sea elegible a mano, pero podria agregarse.
+- La zona fantasma se ubica sola al azar la primera vez, pero se puede reubicar a mano en cualquier parte de la cancha antes de cada partido.
 - El poder "Escudo de aura" solo protege contra "Silencio" por ahora; el resto de los poderes que dice "ignora el efecto de un poder rival" quedan para una version futura mas especifica.
 
 ## Proximos pasos sugeridos
 
 1. **Arqueros personalizados** (7 puntos) en el creador de jugador.
-2. **Equipo propio tambien para el Equipo B** en modo 2 jugadores (necesitaria elegir de cuenta en el mismo celular, o iniciar sesion cada uno).
+2. **Sesiones realmente simultaneas** para el Equipo B en modo 2 jugadores (hoy usa su equipo guardado por busqueda, pero sus monedas/estadisticas no se acreditan porque no tiene la sesion iniciada en ese celular).
 3. **Sistema de tiro por 9 zonas** tal como lo describe la seccion 9, en vez del apuntado libre, si en algun momento lo prefieren.
 4. **Llevarlo a las tiendas de apps**: envolver esta misma pagina con [Capacitor](https://capacitorjs.com/) (`npx cap init`, `npx cap add android`, `npx cap add ios`) genera un proyecto nativo listo para Android Studio / Xcode sin reescribir el juego. Para publicarlo hace falta una cuenta de Google Play Console (pago unico) y/o Apple Developer Program (anual), mas las claves de firma.
 5. **Modo online**: jugar contra alguien en otro celular en vez de compartir la pantalla (Firebase ya deja la base puesta con Firestore, se podria usar para sincronizar la partida).

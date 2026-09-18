@@ -4,10 +4,11 @@ import { initAuth, recordMatchResult, getCurrentUser } from './auth.js';
 import { initHomeScreen } from './menu-ui.js';
 import { initTeamScreen, buildRosterOverride } from './team-ui.js';
 import { initStoreScreen } from './store-ui.js';
-import { addCareerStats } from './player-repo.js';
+import { addCareerStats, lookupPublicAccount } from './player-repo.js';
 
 const DEFAULT_COLOR_A = '#2f6fe0';
-const DEFAULT_COLOR_B = '#e0432f'; // fijo por ahora: el Equipo B en hotseat/vsAI todavia no tiene cuenta propia (ver tarea "Selector de Jugador 2")
+const DEFAULT_COLOR_B = '#e0432f'; // color de arranque del Equipo B; si en modo 2 jugadores se encuentra
+// su cuenta por nombre, game.js pisa este color con el suyo (ver el buscador de "Jugador 2" en game.js)
 
 const appShell = document.getElementById('appShell');
 const gameRoot = document.getElementById('gameRoot');
@@ -51,5 +52,9 @@ window.FulbitoGame.onMatchEnd = (result, statsForA) => {
   recordMatchResult(result);
   if (statsForA && statsForA.length) addCareerStats(statsForA);
 };
+
+// Bridge para que el selector de "Jugador 2" (dentro de js/game.js, un script comun sin
+// import) pueda buscar cuentas por nombre sin tener acceso directo a Firestore.
+window.FulbitoAccounts = { lookupPlayer2: lookupPublicAccount };
 
 initAuth();

@@ -59,6 +59,36 @@ export async function saveTeam(roster){
   await fsMod.setDoc(fsMod.doc(db, 'teams', user.uid), { roster, updatedAt: Date.now() });
 }
 
+// Busqueda de solo lectura por nombre de cuenta (no inicia sesion como esa persona).
+// Se usa para el "Jugador 2" del modo 2 jugadores: usar su equipo/color guardados sin
+// tener que iniciar sesion en su cuenta desde este mismo celular.
+export async function lookupPublicAccount(username){
+  const fb = await getFirebase();
+  const query = String(username||'').trim();
+  if (!fb || !query) return null;
+  const { db, fsMod } = fb;
+  const q = fsMod.query(fsMod.collection(db, 'profiles'), fsMod.where('username', '==', query));
+  const snap = await fsMod.getDocs(q);
+  if (snap.empty) return null;
+  const uid = snap.docs[0].id;
+  const profile = snap.docs[0].data();
+
+  const teamSnap = await fsMod.getDoc(fsMod.doc(db, 'teams', uid));
+  if (!teamSnap.exists()) return { username: profile.username, color: profile.color||null, roster: null };
+
+  const order = ['keeper','def1','def2','mid1','mid2','fwd','captain'];
+  const roster = teamSnap.data().roster || {};
+  const playerDocs = await Promise.all(order.map(key => roster[key]
+    ? fsMod.getDoc(fsMod.doc(db, 'players', roster[key])).catch(()=>null)
+    : null));
+  const rosterOverride = playerDocs.map(d => d && d.exists() ? { skills: d.data().skills, name: d.data().name } : null);
+  return {
+    username: profile.username,
+    color: profile.color || null,
+    roster: rosterOverride.every(Boolean) ? rosterOverride : null,
+  };
+}
+
 // stats: [{ ownedId, goals, shots, saves }] — estadisticas de la partida que se acaba de jugar,
 // se suman (no se reemplazan) al historial de cada jugador de la coleccion.
 export async function addCareerStats(stats){

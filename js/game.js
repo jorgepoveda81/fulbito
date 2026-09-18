@@ -116,15 +116,18 @@ function resetPlayers(){
 // Puente con la app externa (cuentas/tienda/equipo, ver js/app.js).
 // El equipo del usuario logueado reemplaza los presets fijos del Equipo A.
 // ============================================================================
-let rosterOverrideA = null; // arreglo de 7 {skills, name} en el mismo orden que resetPlayers() crea al Equipo A
+let rosterOverrideA = null; // arreglo de 7 {skills, name} en el mismo orden que resetPlayers() crea a cada equipo
+let rosterOverrideB = null; // igual, pero para el Equipo B (solo se usa en modo 2 jugadores, ver "Selector de Jugador 2")
 function applyRosterOverride(){
-  if (!rosterOverrideA) return;
-  players.filter(p=>p.team==='A').forEach((p,i)=>{
-    const ov = rosterOverrideA[i];
-    if (!ov) return;
-    if (ov.skills) p.skills = { ...ov.skills };
-    if (ov.name) p.displayName = ov.name;
-    if (ov.id) p.ownedId = ov.id;
+  [['A', rosterOverrideA], ['B', rosterOverrideB]].forEach(([team, override]) => {
+    if (!override) return;
+    players.filter(p=>p.team===team).forEach((p,i)=>{
+      const ov = override[i];
+      if (!ov) return;
+      if (ov.skills) p.skills = { ...ov.skills };
+      if (ov.name) p.displayName = ov.name;
+      if (ov.id) p.ownedId = ov.id;
+    });
   });
 }
 function captainOf(team){ return players.find(p=>p.team===team && p.isCaptain); }
@@ -1542,15 +1545,42 @@ const nameBInput = document.getElementById('nameB');
 const nameBWrap = document.getElementById('nameBWrap');
 const menuContinue = document.getElementById('menuContinue');
 
+const nameBStatus = document.getElementById('nameBStatus');
 function selectMode(mode){
   state.mode = mode;
   modeHotseat.classList.toggle('selected', mode==='hotseat');
   modeVsAI.classList.toggle('selected', mode==='vsAI');
   nameBWrap.classList.toggle('disabled', mode==='vsAI');
   nameBInput.placeholder = mode==='vsAI' ? 'LA PC' : 'EQUIPO B';
+  if (mode==='vsAI'){ rosterOverrideB = null; nameBStatus.textContent=''; }
 }
 modeHotseat.onclick = () => selectMode('hotseat');
 modeVsAI.onclick = () => selectMode('vsAI');
+
+// Selector de Jugador 2 (modo 2 jugadores): si lo que escribio coincide con una cuenta
+// real, usa su equipo y color guardados para ese partido (busqueda de solo lectura,
+// no inicia sesion como esa persona). Ver js/app.js -> window.FulbitoAccounts.
+let nameBLookupToken = 0;
+let teamColorFromLookupB = null;
+nameBInput.addEventListener('blur', async () => {
+  if (state.mode !== 'hotseat') return;
+  const query = nameBInput.value.trim();
+  rosterOverrideB = null;
+  if (!query || !window.FulbitoAccounts){ nameBStatus.textContent = ''; return; }
+  const myToken = ++nameBLookupToken;
+  nameBStatus.textContent = 'Buscando cuenta...';
+  const found = await window.FulbitoAccounts.lookupPlayer2(query);
+  if (myToken !== nameBLookupToken) return; // el usuario ya escribio otra cosa mientras tanto
+  if (!found){ nameBStatus.textContent = 'No hay cuenta con ese nombre: se usa el equipo por defecto.'; return; }
+  rosterOverrideB = found.roster;
+  if (found.color && found.color !== teamColors.A){
+    teamColorFromLookupB = found.color;
+    window.FulbitoGame.setTeamColors({ B: found.color });
+  }
+  nameBStatus.textContent = found.roster
+    ? `✓ Usando el equipo de ${found.username}`
+    : `✓ Cuenta encontrada, pero todavia no armo su equipo en Mi Equipo`;
+});
 menuContinue.onclick = () => {
   audio.unlock(); // desbloquea el audio con el primer toque del usuario
   const nameA = nameAInput.value.trim();
@@ -1603,13 +1633,17 @@ function updateAI(dt){
 window.FulbitoGame = {
   // roster: arreglo de 7 {skills, name} (arquero, def, def, mid, mid, fwd, capitan) o null para volver al preset por defecto
   setPlayerRoster(roster){ rosterOverrideA = roster; },
+  setPlayerRosterB(roster){ rosterOverrideB = roster; }, // ver "Selector de Jugador 2" (modo 2 jugadores)
   // colors: { A: '#rrggbb', B: '#rrggbb' } — cualquiera de los dos puede omitirse
   setTeamColors(colors){
     teamColors = { ...teamColors, ...(colors||{}) };
     document.documentElement.style.setProperty('--teamA', teamColors.A);
     document.documentElement.style.setProperty('--teamB', teamColors.B);
   },
-  showModeMenu(){ mainMenuOverlay.classList.remove('hidden'); },
+  showModeMenu(){
+    rosterOverrideB = null; teamColorFromLookupB = null; nameBStatus.textContent = '';
+    mainMenuOverlay.classList.remove('hidden');
+  },
 };
 
 resetPlayers();
