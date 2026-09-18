@@ -39,6 +39,12 @@
   </div>
 </div>
 
+<div class="formation-bar hidden" id="formationBar">
+  <div class="fb-title" id="fbTitle">Equipo A: acomoda tus jugadores</div>
+  <div class="fb-zones" id="fbZones"></div>
+  <button class="reset-btn fb-ready" id="fbReady">Listo &#9654;</button>
+</div>
+
 <div class="field-wrap">
   <canvas id="field" width="900" height="520"></canvas>
   <div class="msg-overlay" id="msgOverlay"><div><div id="msgMain"></div><div class="small" id="msgSub"></div></div></div>
@@ -133,7 +139,8 @@
 </details>
 
 <div class="howto">
-  <b>Como se juega (para probar entre dos personas en la misma pantalla):</b> el jugador que tiene el balon se marca con un anillo dorado. Apunta con el mouse o el dedo hacia donde queres mandar el balon, manten presionado para cargar la fuerza y solta para pasar o tirar. Cargar poco = pase suave. Cargar mucho = tiro fuerte. Cuando el balon se detiene, el juego decide quien se queda con la posesion segun en que aura cayo, igual que en las reglas del documento. Antes de arrancar, cada equipo elige 2 poderes en secreto.
+  <b>Antes de arrancar:</b> cada equipo elige 2 poderes en secreto y despues arrastra a sus 5 jugadores de campo (los del borde punteado) a donde quiera dentro de su mitad de cancha, respetando el maximo de jugadores por zona (baja/media/alta). El arquero y el capitan ya tienen su lugar fijo por las reglas.<br><br>
+  <b>Como se juega (para probar entre dos personas en la misma pantalla):</b> el jugador que tiene el balon se marca con un anillo dorado. Apunta con el mouse o el dedo hacia donde queres mandar el balon, manten presionado para cargar la fuerza y solta para pasar o tirar. Cargar poco = pase suave. Cargar mucho = tiro fuerte. Cuando el balon se detiene, el juego decide quien se queda con la posesion segun en que aura cayo, igual que en las reglas del documento.
   <div class="legend">
     <span><span class="sw" style="background:var(--teamA);"></span> Equipo A (izquierda)</span>
     <span><span class="sw" style="background:var(--teamB);"></span> Equipo B (derecha)</span>

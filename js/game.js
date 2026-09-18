@@ -99,10 +99,53 @@ function resetPlayers(){
     mkPlayer('B','fwd',   500,260),
     mkPlayer('B','fwd',   470,260, true),
   ];
+  applyFormation('A');
+  applyFormation('B');
 }
 function captainOf(team){ return players.find(p=>p.team===team && p.isCaptain); }
 function keeperOf(team){ return players.find(p=>p.team===team && p.isKeeper); }
 function otherTeam(team){ return team==='A' ? 'B' : 'A'; }
+
+// ============================================================================
+// SECCION 2 — Formacion previa al partido
+// Los 5 jugadores fijos de campo (sin contar arquero ni capitan) se ubican a
+// mano antes de cada partido, respetando los limites de zona del documento:
+// baja max 3, media max 2, alta max 2. El arquero y el capitan tienen su
+// posicion de inicio fija segun las reglas (seccion 2 y 6) y no se arrastran.
+// ============================================================================
+const ZONE_CAPS = { baja:3, media:2, alta:2 };
+function draggablePlayers(team){
+  return players.filter(p => p.team===team && !p.isCaptain && !p.isKeeper);
+}
+function bandOf(team, x){
+  if (team === 'A'){
+    if (x < 190) return 'baja';
+    if (x < 330) return 'media';
+    return 'alta';
+  }
+  if (x > 710) return 'baja';
+  if (x > 570) return 'media';
+  return 'alta';
+}
+function clampFormationX(team, x){
+  return team==='A' ? clamp(x, 55, 430) : clamp(x, 470, 845);
+}
+function applyFormation(team){
+  const saved = state.formation[team];
+  if (!saved) return;
+  draggablePlayers(team).forEach((p,i)=>{
+    if (saved[i]){ p.x=saved[i].x; p.y=saved[i].y; p.homeX=saved[i].x; p.homeY=saved[i].y; }
+  });
+}
+function saveFormation(team){
+  state.formation[team] = draggablePlayers(team).map(p=>({x:p.x,y:p.y}));
+}
+function jitterAutoFormation(team){
+  draggablePlayers(team).forEach(p=>{
+    p.x = clampFormationX(team, p.x + (Math.random()*50-25));
+    p.y = clamp(p.y + (Math.random()*90-45), 34, H-34);
+  });
+}
 
 // ---------- Balon ----------
 const ball = { x:450, y:260, vx:0, vy:0, flying:false };
@@ -151,6 +194,8 @@ const state = {
   revisionVarPending: false,
   moveCaptainMode: { A:false, B:false },
   ghostZones: { A:null, B:null },
+  formation: { A:null, B:null },
+  formingTeam: 'A',
   penalty: null,
   pendingSinglePenalty: null, // {forTeam} — penal por zona fantasma descubierta
 };
@@ -248,6 +293,7 @@ let tempPick = [];
 
 function beginPowerSelection(){
   state.selectedPowers = { A:[], B:[] };
+  state.formation = { A:null, B:null };
   pickingTeam = 'A';
   tempPick = [];
   openPickerFor('A');
@@ -283,7 +329,7 @@ psConfirm.onclick = () => {
       // la PC elige sus 2 poderes sola, sin pantalla de espera
       const shuffled = POWERS.map(p=>p.id).sort(()=>Math.random()-0.5);
       state.selectedPowers.B = shuffled.slice(0,2);
-      startMatch();
+      beginFormation();
       return;
     }
     handoffText.textContent = `${teamName('A')} ya eligio sus poderes. Pasa el celular a ${teamName('B')}.`;
@@ -291,6 +337,55 @@ psConfirm.onclick = () => {
     handoffContinue.onclick = () => openPickerFor('B');
   } else {
     handoffOverlay.classList.add('hidden');
+    beginFormation();
+  }
+};
+
+// ============================================================================
+// Fase de formacion (hotseat, secreta como los poderes)
+// ============================================================================
+const formationBar = document.getElementById('formationBar');
+const fbTitle = document.getElementById('fbTitle');
+const fbZones = document.getElementById('fbZones');
+const fbReady = document.getElementById('fbReady');
+
+function beginFormation(){
+  resetPlayers();
+  state.phase = 'formation';
+  state.formingTeam = 'A';
+  ball.x = W/2; ball.y = H/2;
+  formationBar.classList.remove('hidden');
+  renderFormationBar();
+}
+function renderFormationBar(){
+  fbTitle.textContent = `${teamName(state.formingTeam)}: arrastra tus jugadores a su lugar`;
+  updateFormationZoneCounts();
+}
+function updateFormationZoneCounts(){
+  const team = state.formingTeam;
+  const counts = { baja:0, media:0, alta:0 };
+  draggablePlayers(team).forEach(p => counts[bandOf(team,p.x)]++);
+  fbZones.innerHTML =
+    `<span>Zona baja ${counts.baja}/${ZONE_CAPS.baja}</span>`+
+    `<span>Zona media ${counts.media}/${ZONE_CAPS.media}</span>`+
+    `<span>Zona alta ${counts.alta}/${ZONE_CAPS.alta}</span>`;
+}
+fbReady.onclick = () => {
+  saveFormation(state.formingTeam);
+  if (state.formingTeam === 'A'){
+    if (state.mode === 'vsAI'){
+      resetPlayers();
+      jitterAutoFormation('B');
+      saveFormation('B');
+      formationBar.classList.add('hidden');
+      startMatch();
+      return;
+    }
+    state.formingTeam = 'B';
+    resetPlayers(); // reaplica lo de A (guardado) y deja a B con la formacion por defecto para editar
+    renderFormationBar();
+  } else {
+    formationBar.classList.add('hidden');
     startMatch();
   }
 };
@@ -305,7 +400,40 @@ function canvasPoint(clientX, clientY){
   const sx = canvas.width/rect.width, sy = canvas.height/rect.height;
   return { x:(clientX-rect.left)*sx, y:(clientY-rect.top)*sy };
 }
+let formationDrag = null; // { player, startX, startY }
+function formationPointerDown(clientX, clientY){
+  const p = canvasPoint(clientX,clientY);
+  const team = state.formingTeam;
+  let target=null, bestDist=30;
+  for (const pl of draggablePlayers(team)){
+    const d = Math.hypot(p.x-pl.x, p.y-pl.y);
+    if (d < bestDist){ bestDist = d; target = pl; }
+  }
+  if (target) formationDrag = { player:target, startX:target.x, startY:target.y };
+}
+function formationPointerMove(clientX, clientY){
+  if (!formationDrag) return;
+  const p = canvasPoint(clientX,clientY);
+  formationDrag.player.x = clampFormationX(state.formingTeam, p.x);
+  formationDrag.player.y = clamp(p.y, 34, H-34);
+  updateFormationZoneCounts();
+}
+function formationPointerUp(){
+  if (!formationDrag) return;
+  const team = state.formingTeam;
+  const player = formationDrag.player;
+  const band = bandOf(team, player.x);
+  const countInBand = draggablePlayers(team).filter(pl => pl!==player && bandOf(team,pl.x)===band).length;
+  if (countInBand >= ZONE_CAPS[band]){
+    player.x = formationDrag.startX; player.y = formationDrag.startY;
+    flashMessage(`Zona ${band} llena`, `Maximo ${ZONE_CAPS[band]} jugadores ahi`, 900);
+  }
+  formationDrag = null;
+  updateFormationZoneCounts();
+}
+
 function pointerDown(clientX, clientY){
+  if (state.phase==='formation'){ formationPointerDown(clientX,clientY); return; }
   if (state.phase!=='aiming' || !state.holder) return;
   const p = canvasPoint(clientX,clientY);
 
@@ -323,11 +451,13 @@ function pointerDown(clientX, clientY){
   aim.x = p.x; aim.y = p.y;
 }
 function pointerMove(clientX, clientY){
+  if (state.phase==='formation'){ formationPointerMove(clientX,clientY); return; }
   if (!aim.active) return;
   const p = canvasPoint(clientX,clientY);
   aim.x = p.x; aim.y = p.y;
 }
 function pointerUp(){
+  if (state.phase==='formation'){ formationPointerUp(); return; }
   if (!aim.active || !state.holder){ aim.active=false; aim.charging=false; return; }
   const holder = state.holder;
   const dx = aim.x - holder.x, dy = aim.y - holder.y;
@@ -893,10 +1023,11 @@ function draw(){
   ctx.clearRect(-20,-20,W+40,H+40);
   drawField();
   if (settings.debugGhost) drawGhostZones();
+  drawFormationGuides();
   drawAuras();
   drawPlayers();
   drawAimAndPower();
-  drawBall();
+  if (state.phase!=='formation') drawBall();
   drawConfetti();
   ctx.restore();
 }
@@ -941,9 +1072,27 @@ function drawGhostZones(){
     ctx.setLineDash([]);
   });
 }
+function formationAlphaFor(p){
+  if (state.phase!=='formation') return 1;
+  return p.team===state.formingTeam ? 1 : 0.16;
+}
+function drawFormationGuides(){
+  if (state.phase!=='formation') return;
+  const team = state.formingTeam;
+  const edges = team==='A' ? [190,330] : [710,570];
+  ctx.save();
+  ctx.setLineDash([5,6]);
+  ctx.strokeStyle = 'rgba(255,201,77,0.5)'; ctx.lineWidth=1.5;
+  edges.forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,10); ctx.lineTo(x,H-10); ctx.stroke(); });
+  ctx.restore();
+  ctx.fillStyle='rgba(255,201,77,0.75)'; ctx.font='11px Inter'; ctx.textAlign='center';
+  const labelX = team==='A' ? [110,260,390] : [790,640,510];
+  ['Baja','Media','Alta'].forEach((t,i)=>ctx.fillText(t,labelX[i],26));
+}
 function drawAuras(){
   const active = getActivePlayers();
   for (const p of active){
+    ctx.globalAlpha = formationAlphaFor(p);
     ctx.beginPath();
     ctx.arc(p.x,p.y,auraRadiusFor(p),0,Math.PI*2);
     ctx.fillStyle = p.team==='A' ? 'rgba(47,111,224,0.10)' : 'rgba(224,67,47,0.10)';
@@ -951,12 +1100,15 @@ function drawAuras(){
     ctx.strokeStyle = p.team==='A' ? 'rgba(47,111,224,0.45)' : 'rgba(224,67,47,0.45)';
     ctx.lineWidth=1.5;
     ctx.stroke();
+    ctx.globalAlpha = 1;
   }
 }
 function drawPlayers(){
   const active = getActivePlayers();
   for (const p of active){
     const isHolder = state.holder===p;
+    const isDraggable = state.phase==='formation' && p.team===state.formingTeam && !p.isCaptain && !p.isKeeper;
+    ctx.globalAlpha = formationAlphaFor(p);
     ctx.beginPath();
     ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
     ctx.fillStyle = p.team==='A' ? '#2f6fe0' : '#e0432f';
@@ -970,9 +1122,17 @@ function drawPlayers(){
       ctx.arc(p.x,p.y,p.r+6,0,Math.PI*2);
       ctx.strokeStyle='#ffc94d'; ctx.lineWidth=3; ctx.stroke();
     }
+    if (isDraggable){
+      ctx.beginPath();
+      ctx.setLineDash([3,4]);
+      ctx.arc(p.x,p.y,p.r+5,0,Math.PI*2);
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.setLineDash([]);
+    }
     ctx.fillStyle='#fff'; ctx.font='10px Inter'; ctx.textAlign='center';
     const label = p.isCaptain ? 'C' : (p.isKeeper ? 'A' : '');
     if (label) ctx.fillText(label,p.x,p.y+3);
+    ctx.globalAlpha = 1;
   }
 }
 function drawAimAndPower(){
@@ -1039,7 +1199,10 @@ function updateHud(){
   const dot = document.getElementById('turnDot');
   const bar = document.getElementById('turnbar');
   const capInfo = document.getElementById('captainInfo');
-  if (state.phase==='ended'){
+  if (state.phase==='formation'){
+    label.textContent = `Armando la formacion de ${teamName(state.formingTeam)}`;
+    updateFormationZoneCounts();
+  } else if (state.phase==='ended'){
     label.textContent='Partido terminado';
   } else if (state.penalty){
     label.textContent = state.penalty.mode==='shootout'
@@ -1048,10 +1211,11 @@ function updateHud(){
   } else {
     label.textContent = `Turno de ${teamName(state.turnTeam)}` + (state.phase==='flying' ? ' &middot; balon en juego' : '');
   }
-  dot.style.background = state.turnTeam==='A' ? 'var(--teamA)' : 'var(--teamB)';
-  const pct = Math.max(0, state.turnTimeLeft/settings.turnSeconds)*100;
+  dot.style.background = (state.phase==='formation' ? state.formingTeam : state.turnTeam)==='A' ? 'var(--teamA)' : 'var(--teamB)';
+  const pct = state.phase==='formation' ? 100 : Math.max(0, state.turnTimeLeft/settings.turnSeconds)*100;
   bar.style.width = pct+'%';
-  capInfo.textContent = state.holder ? (state.holder.isCaptain ? 'El capitan tiene el balon' : (state.holder.isKeeper ? 'El arquero tiene el balon' : 'Jugador de campo')) : '-';
+  capInfo.textContent = state.phase==='formation' ? 'Arrastra los jugadores con borde punteado' :
+    (state.holder ? (state.holder.isCaptain ? 'El capitan tiene el balon' : (state.holder.isKeeper ? 'El arquero tiene el balon' : 'Jugador de campo')) : '-');
   updatePowerButtons();
 }
 

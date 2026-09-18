@@ -50,6 +50,16 @@ h1{
 .whoseturn{ display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; }
 .dot{ width:10px; height:10px; border-radius:50%; }
 
+.formation-bar{
+  width:100%; max-width:900px; display:flex; align-items:center; justify-content:space-between;
+  gap:12px; flex-wrap:wrap; background:var(--panel); border:1px solid #263033; border-radius:14px;
+  padding:10px 16px; margin-bottom:10px;
+}
+.formation-bar.hidden{ display:none; }
+.fb-title{ font-weight:700; font-size:13px; color:var(--gold); }
+.fb-zones{ display:flex; gap:12px; flex-wrap:wrap; font-size:11.5px; color:var(--sub); font-weight:600; }
+.fb-ready{ margin-top:0; width:auto; padding:9px 18px; background:var(--teamA); }
+
 .field-wrap{ position:relative; width:100%; max-width:900px; }
 canvas{
   width:100%; height:auto; display:block; border-radius:16px;

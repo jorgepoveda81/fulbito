@@ -40,6 +40,7 @@ Todo esta en JavaScript plano (sin frameworks ni instalacion de paquetes) para q
 ## Que esta implementado (Version 1.0 de las reglas)
 
 - Cancha, auras, capitan movil, arquero, rebotes y deteccion de punto final (secc. 1-2, 4-6).
+- Formacion pre-partido: cada equipo arrastra sus 5 jugadores de campo a donde quiera dentro de su mitad, respetando los cupos de zona baja/media/alta (secc. 2). Arquero y capitan quedan fijos como marca el documento.
 - Habilidades por jugador (Fuerza/Pase/Precision/Tiro/Defensa sumando 11, arquero configurable) afectando velocidad y desvio del disparo (secc. 3).
 - VAR de posesion con umbral configurable y desempate por milisegundos dentro del aura (secc. 7).
 - Defensa/intercepcion: el rival tiene un intento por turno, con probabilidad segun Defensa vs. Tiro/Pase (secc. 8).
