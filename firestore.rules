@@ -11,9 +11,23 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // profiles/{uid}: nombre de jugador, color y monedas ganadas jugando.
+    // Las monedas y el record (wins/losses/draws) se escriben siempre con increment()
+    // desde el cliente (ver js/auth.js): eso deja comparar el valor viejo contra el
+    // nuevo aca y limitar cuanto puede subir de una sola vez, para que nadie se de
+    // monedas o victorias de mas escribiendo directo con la consola del navegador.
+    // Gastar monedas en la tienda (numeros negativos) sigue libre.
     match /profiles/{uid} {
       allow read: if request.auth != null;
-      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.coins == 50
+                    && request.resource.data.wins == 0
+                    && request.resource.data.losses == 0
+                    && request.resource.data.draws == 0;
+      allow update: if request.auth != null && request.auth.uid == uid
+                    && (request.resource.data.coins - resource.data.coins) <= 50
+                    && (request.resource.data.wins - resource.data.wins) <= 1
+                    && (request.resource.data.losses - resource.data.losses) <= 1
+                    && (request.resource.data.draws - resource.data.draws) <= 1;
       allow delete: if false;
     }
 
