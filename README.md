@@ -42,6 +42,7 @@ Todo esto se guarda en [Firebase](https://firebase.google.com) (cuentas + base d
 index.html                   pantalla principal: menu, HUD del partido y cancha
 css/style.css                 estilos del partido (cancha, HUD, poderes, formacion)
 css/app-ui.css                 estilos de las pantallas de cuenta/equipo/tienda
+js/rules-core.js               reglas puras (sin canvas ni DOM) del motor: testeadas en tests/
 js/game.js                     el motor del partido (fisica, reglas, IA, sonido, poderes)
 js/app.js                       arranca todo y conecta las pantallas nuevas con game.js
 js/firebase-init.js             configuracion de Firebase (claves)
@@ -58,6 +59,8 @@ manifest.webmanifest            hace que el juego se pueda "instalar" en el celu
 icons/icon.svg                   icono de la app
 docs/REGLAS_v1.0.md              las reglas de diseño del juego
 docs/FIREBASE_SETUP.md           como activar cuentas/tienda
+tests/rules-core.test.js         tests de js/rules-core.js (node --test, sin dependencias)
+package.json                     "npm test" corre los tests
 ```
 
 Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartido en archivos chicos, cada uno con una sola responsabilidad, para que sea facil de leer y de seguir modificando.

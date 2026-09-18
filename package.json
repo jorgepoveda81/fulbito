@@ -1,0 +1,8 @@
+{
+  "name": "fulbito",
+  "private": true,
+  "description": "Futbolin evolucionado para celular. Sin build ni dependencias: los tests usan el test runner incluido en Node.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

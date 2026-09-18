@@ -72,12 +72,7 @@ const FIELD_SKILL_PRESETS = {
   captain: { fuerza:3, pase:2, precision:3, tiro:2, defensa:1 },
 };
 function gkSkills(total){
-  // reparte la suma configurable manteniendo la proporcion 2:2:2:1 del documento
-  const ratios = [2,2,2,1];
-  const base = ratios.map(r => Math.round(r/7*total));
-  const diff = total - base.reduce((a,b)=>a+b,0);
-  base[2] += diff; // ajusta "volada" si el redondeo no cierra exacto
-  return { altura:base[0], velocidad:base[1], volada:base[2], salto:base[3] };
+  return FulbitoRules.gkSkills(total);
 }
 
 function mkPlayer(team, role, x, y, isCaptain, isKeeper, jersey){
@@ -149,10 +144,7 @@ function draggablePlayers(team){
   return players.filter(p => p.team===team && !p.isCaptain && !p.isKeeper);
 }
 function bandOf(team, x){
-  const advance = team==='A' ? x : (W - x); // 0 = en el propio arco, W = en el arco rival
-  if (advance < W/3) return 'baja';
-  if (advance < (2*W)/3) return 'media';
-  return 'alta';
+  return FulbitoRules.bandOf(team, x, W);
 }
 function clampFormationX(team, x){
   return clamp(x, 40, W-40);
@@ -664,7 +656,7 @@ function updatePowerButtons(){
 // Disparo / pase (secciones 3, 8 y 9)
 // ============================================================================
 function speedMultiplierFromFuerza(fuerza){
-  return 0.55 + (fuerza/11) * 0.9; // 0 -> 0.55x, 11 -> 1.45x
+  return FulbitoRules.speedMultiplierFromFuerza(fuerza);
 }
 function applyPrecisionDeviation(dirx, diry, precision, power){
   const maxDeg = (1 - precision/11) * 18; // baja precision = hasta 18 grados de error
@@ -780,9 +772,7 @@ function updateBall(dt){
       // SECCION 9 — Si el tiro no es demasiado fuerte para las habilidades del arquero,
       // lo controla del todo (el balon queda en su aura); si es muy fuerte, solo lo desvia.
       if (p.isKeeper){
-        const sk = p.skills;
-        const catchSkill = (sk.altura+sk.velocidad+sk.volada+sk.salto)/4;
-        const catchThreshold = 200 + catchSkill*70;
+        const catchThreshold = FulbitoRules.keeperCatchThreshold(p.skills);
         statFor(p).saves++;
         if (incomingSpeed < catchThreshold){
           ball.x = p.x; ball.y = p.y; ball.vx = 0; ball.vy = 0; ball.flying = false;
@@ -813,9 +803,8 @@ function updateBall(dt){
       if (dist <= auraRadiusFor(p)){
         state.interceptRolled.add(p);
         state.interceptUsed[rivalTeam] = true;
-        const shooter = players.find(pl => pl.team===shooterTeam) ? getLastShooter() : null;
         const attackSkill = getAttackSkillForIntercept();
-        const chance = clamp(p.skills.defensa / (p.skills.defensa + attackSkill), 0.15, 0.85);
+        const chance = FulbitoRules.interceptionChance(p.skills.defensa, attackSkill);
         if (Math.random() < chance){
           ball.vx = 0; ball.vy = 0; ball.flying = false;
           ball.x = p.x; ball.y = p.y;
@@ -843,7 +832,7 @@ function updateBall(dt){
     resolveEndpoint();
   }
 }
-function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function clamp(v,min,max){ return FulbitoRules.clamp(v,min,max); }
 let lastShooterRef = null;
 function getLastShooter(){ return lastShooterRef; }
 function getAttackSkillForIntercept(){
@@ -900,29 +889,25 @@ function resolveEndpoint(){
     // VAR de posesion: gana el aura mas cercana al centro final del balon.
     // Si la diferencia es menor al umbral configurado, desempata por ms dentro del aura.
     triggerVarZoom(ball.x, ball.y);
-    const sorted = inside.slice().sort((a,b)=>{
-      const da = Math.hypot(ball.x-a.x, ball.y-a.y);
-      const db = Math.hypot(ball.x-b.x, ball.y-b.y);
-      return da-db;
-    });
-    const d1 = Math.hypot(ball.x-sorted[0].x, ball.y-sorted[0].y);
-    const d2 = sorted[1] ? Math.hypot(ball.x-sorted[1].x, ball.y-sorted[1].y) : Infinity;
-    if (Math.abs(d1-d2) <= settings.varThreshold * settings.auraRadius && sorted[1]){
-      const t1 = ballAuraTime.get(sorted[0])||0, t2 = ballAuraTime.get(sorted[1])||0;
-      if (t1 === t2){
-        // empate exacto: el balon rebota al centro y nadie recibe posesion
-        ball.x = W/2; ball.y = H/2;
-        flashMessage('&#127937; Empate total', 'Nadie recibe la posesion, el balon vuelve al centro', 1300);
-        setTimeout(()=>startTurn(state.turnTeam, players.find(p=>p.team===state.turnTeam && p.isKeeper)), 1300);
-        return;
-      }
-      winner = t1 >= t2 ? sorted[0] : sorted[1];
-    } else {
-      winner = sorted[0];
+    const byId = new Map(inside.map(p => [statKey(p), p]));
+    const candidates = inside.map(p => ({
+      id: statKey(p),
+      dist: Math.hypot(ball.x-p.x, ball.y-p.y),
+      auraTimeMs: ballAuraTime.get(p)||0,
+    }));
+    const result = FulbitoRules.resolvePossession(candidates, settings.varThreshold * settings.auraRadius);
+    if (result.tie){
+      // empate exacto: el balon rebota al centro y nadie recibe posesion
+      ball.x = W/2; ball.y = H/2;
+      flashMessage('&#127937; Empate total', 'Nadie recibe la posesion, el balon vuelve al centro', 1300);
+      setTimeout(()=>startTurn(state.turnTeam, players.find(p=>p.team===state.turnTeam && p.isKeeper)), 1300);
+      return;
     }
+    winner = byId.get(result.winnerId);
     let detail = '';
     if (state.revisionVarPending){
-      detail = ` (d:${d1.toFixed(0)}px${sorted[1]?`/${d2.toFixed(0)}px`:''})`;
+      const sorted = candidates.slice().sort((a,b)=>a.dist-b.dist);
+      detail = ` (d:${sorted[0].dist.toFixed(0)}px${sorted[1]?`/${sorted[1].dist.toFixed(0)}px`:''})`;
       state.revisionVarPending = false;
     }
     flashMessage('&#128250; VAR de posesion', `Gana ${teamName(winner.team)}${detail}`, 1300);
