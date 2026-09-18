@@ -155,9 +155,12 @@ canvas{
 }
 .msg-overlay .small{ font-family:'Inter'; font-size:14px; font-weight:600; margin-top:6px; }
 
+/* Pantalla completa (fixed, no atado al alto de la cancha): antes quedaba metido dentro
+   de .field-wrap, que en celular es mas bajo que el contenido de estas pantallas (modo,
+   poderes, tutorial), asi que el texto se desbordaba para arriba y se pisaba con el HUD. */
 .power-select-overlay{
-  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  background:rgba(8,11,12,0.92); border-radius:16px; z-index:5; padding:16px;
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(8,11,12,0.92); z-index:50; padding:16px; overflow-y:auto;
 }
 .power-select-overlay.hidden{ display:none; }
 .power-select-box{ width:100%; max-width:520px; text-align:center; }
