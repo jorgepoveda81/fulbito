@@ -79,3 +79,41 @@ test('resolvePossession: empate exacto de distancia y tiempo no da posesion a na
   );
   assert.deepEqual(r, { tie: true });
 });
+
+test('advancePenaltyState: ronda normal, pasa el turno al otro equipo sin terminar', () => {
+  const r = R.advancePenaltyState({ team: 'A', scoreA: 1, scoreB: 0, kicksLeft: { A: 3, B: 3 } });
+  assert.deepEqual(r, { finished: false, winner: null, team: 'B', kicksLeft: { A: 2, B: 3 } });
+});
+
+test('advancePenaltyState: termina con ganador claro cuando los dos ya patearon todo', () => {
+  const r = R.advancePenaltyState({ team: 'B', scoreA: 2, scoreB: 1, kicksLeft: { A: 0, B: 1 } });
+  assert.equal(r.finished, true);
+  assert.equal(r.winner, 'A');
+});
+
+test('advancePenaltyState: empate tras los tiros iniciales entra en muerte subita', () => {
+  const r = R.advancePenaltyState({ team: 'B', scoreA: 2, scoreB: 2, kicksLeft: { A: 0, B: 1 } });
+  assert.equal(r.finished, false);
+  assert.equal(r.winner, null);
+  assert.deepEqual(r.kicksLeft, { A: 1, B: 1 });
+});
+
+test('advancePenaltyState: una ronda de muerte subita con resultado distinto termina el partido', () => {
+  const r = R.advancePenaltyState({ team: 'B', scoreA: 3, scoreB: 2, kicksLeft: { A: 0, B: 1 } });
+  assert.equal(r.finished, true);
+  assert.equal(r.winner, 'A');
+});
+
+test('advancePenaltyState: no termina mientras al otro equipo le queden tiros, sin importar el marcador', () => {
+  const r = R.advancePenaltyState({ team: 'A', scoreA: 2, scoreB: 1, kicksLeft: { A: 1, B: 1 } });
+  assert.equal(r.finished, false);
+  assert.equal(r.team, 'B');
+  assert.deepEqual(r.kicksLeft, { A: 0, B: 1 });
+});
+
+test('advancePenaltyState: si la muerte subita sigue empatada, se extiende otra ronda mas', () => {
+  const r = R.advancePenaltyState({ team: 'A', scoreA: 2, scoreB: 2, kicksLeft: { A: 1, B: 0 } });
+  assert.equal(r.finished, false);
+  assert.equal(r.winner, null);
+  assert.deepEqual(r.kicksLeft, { A: 1, B: 1 }); // otra vuelta de muerte subita
+});

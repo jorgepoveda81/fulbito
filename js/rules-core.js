@@ -84,6 +84,27 @@
     return { winnerId: sorted[0].id };
   }
 
+  // secciones 10/12: decide que pasa despues de que un equipo patea en la tanda de
+  // penales. current: { team, scoreA, scoreB, kicksLeft:{A,B} } — team es quien acaba
+  // de patear. Devuelve { finished, winner, team, kicksLeft } — si finished es false,
+  // team/kicksLeft son el estado para la proxima patada; si es true, winner ('A'|'B')
+  // ya decidio (nunca hay empate en penales). Empate tras agotar los tiros iniciales
+  // de los dos equipos -> muerte subita: kicksLeft se resetea a 1 para cada uno.
+  function advancePenaltyState(current) {
+    const kicksLeft = { A: current.kicksLeft.A, B: current.kicksLeft.B };
+    kicksLeft[current.team] -= 1;
+    const otherTeam = current.team === 'A' ? 'B' : 'A';
+    const bothDone = kicksLeft.A <= 0 && kicksLeft.B <= 0;
+    if (bothDone && current.scoreA !== current.scoreB) {
+      return { finished: true, winner: current.scoreA > current.scoreB ? 'A' : 'B', team: null, kicksLeft };
+    }
+    if (bothDone && current.scoreA === current.scoreB) {
+      kicksLeft.A = 1;
+      kicksLeft.B = 1;
+    }
+    return { finished: false, winner: null, team: otherTeam, kicksLeft };
+  }
+
   return {
     FIELD_SKILL_SUM,
     clamp,
@@ -95,5 +116,6 @@
     interceptionChance,
     keeperCatchThreshold,
     resolvePossession,
+    advancePenaltyState,
   };
 });

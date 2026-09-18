@@ -1098,12 +1098,10 @@ function resolvePenaltyRest(){
 }
 function advancePenalty(){
   const p = state.penalty;
-  p.kicksLeft[p.team]--;
-  const otherT = p.team==='A' ? 'B' : 'A';
-  const bothDone = p.kicksLeft.A<=0 && p.kicksLeft.B<=0;
-  if (bothDone && p.scoreA !== p.scoreB){ finishPenalties(); return; }
-  if (bothDone && p.scoreA === p.scoreB){ p.kicksLeft.A = 1; p.kicksLeft.B = 1; }
-  p.team = otherT;
+  const result = FulbitoRules.advancePenaltyState({ team:p.team, scoreA:p.scoreA, scoreB:p.scoreB, kicksLeft:p.kicksLeft });
+  p.kicksLeft = result.kicksLeft;
+  if (result.finished){ finishPenalties(); return; }
+  p.team = result.team;
   setTimeout(setupPenaltyKick, 900);
 }
 function finishPenalties(){
