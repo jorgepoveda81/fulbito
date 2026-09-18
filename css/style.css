@@ -245,8 +245,10 @@ details.settings summary{ cursor:pointer; padding:10px 0; font-weight:700; font-
 }
 
 .howto{
-  width:100%; max-width:900px; margin-top:12px; background:var(--panel); border-radius:14px;
-  padding:14px 18px; border:1px solid #263033; font-size:13px; line-height:1.5; color:var(--sub);
+  width:100%; max-width:900px; margin-top:12px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.025), transparent 40%), var(--panel);
+  border-radius:16px; padding:14px 18px; border:1px solid #263033; border-top:1px solid #33403f;
+  box-shadow:0 6px 16px -10px rgba(0,0,0,0.65); font-size:13px; line-height:1.5; color:var(--sub);
 }
 .howto b{ color:var(--text); }
 .legend{ display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; }
