@@ -621,11 +621,13 @@ function renderPowerButtons(){
     row.innerHTML = '';
     state.selectedPowers[team].forEach(id => {
       const p = powerById(id);
+      const isPassive = p.scope === 'passive';
       const btn = document.createElement('button');
-      btn.className = 'power-btn';
+      btn.type = 'button';
+      btn.className = 'power-btn' + (isPassive ? ' power-passive' : '');
       btn.dataset.team = team; btn.dataset.power = id;
-      btn.innerHTML = `${p.name}<span class="desc">${p.desc}</span>`;
-      btn.onclick = () => activatePower(team, id);
+      btn.innerHTML = `${p.name}<span class="desc">${p.desc}${isPassive ? ' (automatico)' : ''}</span>`;
+      if (!isPassive) btn.onclick = () => activatePower(team, id);
       row.appendChild(btn);
       powerButtonEls.push(btn);
     });

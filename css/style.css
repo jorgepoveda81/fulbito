@@ -167,6 +167,9 @@ canvas{
 .power-btn:disabled{ opacity:0.35; cursor:not-allowed; }
 .power-btn.inactive-turn{ opacity:0.55; }
 .power-btn .desc{ display:block; font-weight:400; color:var(--sub); font-size:10.5px; margin-top:2px; }
+/* Poderes pasivos (ej. Recuperacion rapida): se activan solos, no hay nada que tocar */
+.power-btn.power-passive{ cursor:default; }
+.power-btn.power-passive:hover{ transform:none; }
 
 details.settings{
   width:100%; max-width:900px; margin-top:10px; background:var(--panel); border-radius:14px;
