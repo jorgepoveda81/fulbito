@@ -656,7 +656,7 @@ function activatePower(team, id){
       }
       break;
     case 'segundobloqueo':
-      if (state.turnTeam !== team){
+      if (state.turnTeam !== team && !state.penalty){
         state.interceptUsed[team] = false; markUsed(team,id);
         flashMessage('Segundo bloqueo listo', '', 800);
       }
@@ -692,7 +692,7 @@ function updatePowerButtons(){
     if (id==='tiempo') enabled = enabled && state.turnTeam===team && state.phase==='aiming';
     if (id==='farmear') enabled = enabled && state.passStreak[team]>=2 && !!state.holder && state.holder.team===team;
     if (id==='planb') enabled = enabled && aim.active && !!state.holder && state.holder.team===team;
-    if (id==='segundobloqueo') enabled = enabled && state.turnTeam!==team;
+    if (id==='segundobloqueo') enabled = enabled && state.turnTeam!==team && !state.penalty; // no sirve en penales: ahi no hay intercepcion (ver seccion 8 vs. 10)
     if (id==='pasocapitan') enabled = enabled && state.turnTeam===team && !!state.holder && state.holder.isCaptain;
     btn.disabled = !enabled;
   });
