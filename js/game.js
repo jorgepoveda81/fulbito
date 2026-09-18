@@ -745,11 +745,29 @@ function updateBall(dt){
     const minDist = p.r + BALL_R;
     if (dist < minDist && dist > 0.001){
       const nx = dx/dist, ny = dy/dist;
+      const incomingSpeed = Math.hypot(ball.vx, ball.vy);
+
+      // SECCION 9 — Si el tiro no es demasiado fuerte para las habilidades del arquero,
+      // lo controla del todo (el balon queda en su aura); si es muy fuerte, solo lo desvia.
+      if (p.isKeeper){
+        const sk = p.skills;
+        const catchSkill = (sk.altura+sk.velocidad+sk.volada+sk.salto)/4;
+        const catchThreshold = 200 + catchSkill*70;
+        if (incomingSpeed < catchThreshold){
+          ball.x = p.x; ball.y = p.y; ball.vx = 0; ball.vy = 0; ball.flying = false;
+          flashMessage('&#129508; ¡Atajada segura!', `${teamName(p.team)} controla el balon`, 900);
+          audio.save(); vibrate(30);
+          startTurn(p.team, p);
+          return;
+        }
+        flashMessage('&#129508; ¡Atajada!', 'El arquero la desvia', 700);
+        audio.save(); vibrate(30);
+      }
+
       ball.x = p.x + nx*minDist; ball.y = p.y + ny*minDist;
       const dot = ball.vx*nx + ball.vy*ny;
       ball.vx -= 2*dot*nx; ball.vy -= 2*dot*ny;
       ball.vx *= 0.82; ball.vy *= 0.82;
-      if (p.isKeeper){ flashMessage('&#129508; ¡Atajada!', '', 700); audio.save(); vibrate(30); }
     }
   }
 
@@ -969,7 +987,10 @@ function resolveSinglePenaltyGoal(team){
 function startPenalties(){
   state.phase='penaltySetup';
   state.penalty = { round:1, team:'A', scoreA:0, scoreB:0, kicksLeft:{A:3,B:3}, players:[], mode:'shootout', kickingTeam:'A' };
-  flashMessage('&#127877; Tanda de penales', 'Empate al final de los 3 minutos', 1500);
+  // el reloj del partido ya termino y su intervalo se detuvo (onMatchTimeUp): si no se avisa
+  // aca, el numero queda clavado en 0:00 y parece que el juego se colgo aunque siga en penales.
+  document.getElementById('matchtime').textContent = 'PENALES';
+  flashMessage('&#127877; Tanda de penales', 'Empate al final de los 3 minutos', 1800);
   setTimeout(setupPenaltyKick, 1500);
 }
 function setupPenaltyKick(forTeamArg, defTeamArg, mode){
@@ -1023,6 +1044,7 @@ function advancePenalty(){
 function finishPenalties(){
   const p = state.penalty;
   state.phase='ended';
+  document.getElementById('matchtime').textContent = 'FINAL';
   const winner = p.scoreA>p.scoreB ? 'Equipo A' : 'Equipo B';
   flashMessage('&#127942; Fin de los penales', `¡Gana ${winner}! (${p.scoreA} - ${p.scoreB})`, 500000);
   notifyMatchEnd(p.scoreA>p.scoreB ? 'win' : 'loss'); // en penales no hay empate
@@ -1065,7 +1087,8 @@ function startMatchClock(){
     state.matchTimeLeft -= 1;
     if (state.matchTimeLeft <= 0){
       state.matchTimeLeft = 0;
-      onMatchTimeUp();
+      onMatchTimeUp(); // decide que mostrar en el reloj (PENALES o el resultado final)
+      return;
     }
     document.getElementById('matchtime').textContent = fmtTime(state.matchTimeLeft);
   }, 1000);
@@ -1077,6 +1100,7 @@ function onMatchTimeUp(){
 }
 function endMatch(){
   state.phase = 'ended';
+  document.getElementById('matchtime').textContent = 'FINAL';
   const winner = state.scoreA>state.scoreB ? 'Equipo A' : (state.scoreB>state.scoreA ? 'Equipo B' : 'Empate');
   flashMessage('&#127942; Fin del partido', winner==='Empate' ? 'Empate' : `¡Gana ${winner}!`, 500000);
   notifyMatchEnd(state.scoreA>state.scoreB ? 'win' : (state.scoreB>state.scoreA ? 'loss' : 'draw'));
