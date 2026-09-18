@@ -18,10 +18,38 @@ service cloud.firestore {
     }
 
     // players/{playerId}: jugadores que el usuario compro en la tienda o creo el mismo.
+    // La regla central del juego es "sin pay to win": todo jugador de campo reparte 11
+    // puntos y todo arquero reparte 7, nunca mas. El creador de jugador y la tienda ya lo
+    // respetan del lado del cliente, pero eso solo no alcanza (cualquiera con la consola
+    // del navegador podria escribir un documento distinto); se valida de nuevo aca, que es
+    // lo unico que Firestore realmente hace cumplir.
+    function sumFieldSkills(s) {
+      return s.fuerza + s.pase + s.precision + s.tiro + s.defensa;
+    }
+    function sumKeeperSkills(s) {
+      return s.altura + s.velocidad + s.volada + s.salto;
+    }
+    function isValidPlayerSkills(data) {
+      return (data.type == 'field'
+                && data.skills.fuerza is number && data.skills.pase is number
+                && data.skills.precision is number && data.skills.tiro is number
+                && data.skills.defensa is number && sumFieldSkills(data.skills) == 11)
+          || (data.type == 'keeper'
+                && data.skills.altura is number && data.skills.velocidad is number
+                && data.skills.volada is number && data.skills.salto is number
+                && sumKeeperSkills(data.skills) == 7);
+    }
     match /players/{playerId} {
       allow read: if request.auth != null;
-      allow update, delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid
+                    && isValidPlayerSkills(request.resource.data);
+      // Update solo se usa para sumar estadisticas de carrera (goles/tiros/atajadas) despues
+      // de un partido: las habilidades, el tipo y el dueño no pueden cambiar despues de creado.
+      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid
+                    && request.resource.data.skills == resource.data.skills
+                    && request.resource.data.type == resource.data.type
+                    && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
     }
 
     // teams/{uid}: el equipo activo del usuario (un solo documento, id = su uid).

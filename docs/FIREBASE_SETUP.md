@@ -12,6 +12,8 @@ FULBITO usa [Firebase](https://firebase.google.com) para las cuentas y para guar
 6. Pega ese bloque en `js/firebase-init.js` (reemplaza el objeto `firebaseConfig` que esta ahi con valores de ejemplo).
 7. **Firestore Database → Reglas** → pega el contenido de `firestore.rules` (esta en la raiz del repo) → **Publicar**.
 
+> Las reglas no se despliegan solas cuando cambia el archivo en el repo — es un paso manual. Si ya las habias pegado antes, volve a pegar la version actual del archivo cada vez que cambie (por ejemplo, se agrego una validacion nueva para que nadie pueda inventarse habilidades de mas escribiendo directo en la base).
+
 ## 2. Modelo de datos
 
 | Coleccion | Documento | Contenido |
