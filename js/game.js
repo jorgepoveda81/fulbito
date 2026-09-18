@@ -172,7 +172,7 @@ function jitterAutoFormation(team){
 }
 
 // ---------- Balon ----------
-const ball = { x:450, y:260, vx:0, vy:0, flying:false };
+const ball = { x:450, y:260, vx:0, vy:0, flying:false, justShotBy:null, hasEscaped:true };
 let ballAuraTime = new Map(); // acumula ms que el balon paso dentro del aura de cada jugador (seccion 7)
 
 // ============================================================================
@@ -686,6 +686,11 @@ function statFor(p){
 
 function shoot(holder, dirx, diry, power){
   statFor(holder).shots++;
+  // Evita que el balon "choque" contra el mismo jugador que lo acaba de patear en el primer
+  // instante del tiro (antes rebotaba y listo, pero una atajada real lo frena en seco: sin
+  // esto, un arquero podia terminar atajandose su propio saque y quedar trabado para siempre).
+  ball.justShotBy = holder;
+  ball.hasEscaped = false;
   state.shooterTeam = holder.team;
   state.interceptUsed = { A:false, B:false }; // nuevo intento de intercepcion disponible (seccion 8)
   state.interceptRolled.clear();
@@ -756,7 +761,12 @@ function updateBall(dt){
 
   // Colision fisica con jugadores (choque/atajada)
   const active = getActivePlayers();
+  if (!ball.hasEscaped && ball.justShotBy){
+    const dEsc = Math.hypot(ball.x-ball.justShotBy.x, ball.y-ball.justShotBy.y);
+    if (dEsc >= ball.justShotBy.r + BALL_R) ball.hasEscaped = true;
+  }
   for (const p of active){
+    if (p === ball.justShotBy && !ball.hasEscaped) continue; // todavia no se alejo de quien lo pateo
     const dx = ball.x-p.x, dy = ball.y-p.y;
     const dist = Math.hypot(dx,dy);
     const minDist = p.r + BALL_R;
