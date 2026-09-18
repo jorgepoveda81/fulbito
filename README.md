@@ -78,7 +78,7 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 - Formacion pre-partido: cada equipo arrastra sus 5 jugadores de campo a donde quiera dentro de su mitad, respetando los cupos de zona baja/media/alta (secc. 2). Arquero y capitan quedan fijos como marca el documento.
 - Habilidades por jugador (Fuerza/Pase/Precision/Tiro/Defensa sumando 11, arquero configurable) afectando velocidad y desvio del disparo (secc. 3).
 - VAR de posesion con umbral configurable y desempate por milisegundos dentro del aura (secc. 7).
-- Defensa/intercepcion: el rival tiene un intento por turno, con probabilidad segun Defensa vs. Tiro/Pase (secc. 8).
+- Defensa/intercepcion: el rival tiene un intento por turno, con probabilidad segun Defensa vs. Tiro/Pase (secc. 8). No aplica en penales, que usan solo las reglas de tiro y atajada de la seccion 9 (asi lo dice la seccion 10) — antes el arquero tenia sin querer dos chances de tapar el mismo penal.
 - Goles, atajadas, reinicios (secc. 9).
 - Zona fantasma secreta por equipo con penal al descubrirla, y tanda de penales con muerte subita (secc. 10).
 - Los 10 poderes de la seccion 11, elegidos en secreto antes de cada partido.

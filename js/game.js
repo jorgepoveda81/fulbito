@@ -838,10 +838,15 @@ function updateBall(dt){
     }
   }
 
-  // SECCION 8 — Defensa e intercepcion: una oportunidad por turno rival
+  // SECCION 8 — Defensa e intercepcion: una oportunidad por turno rival.
+  // No aplica en penales: ahi el duelo es 1 vs 1 pateador-arquero, y el aura del
+  // arquero es mas grande que su radio de choque, asi que el balon la cruzaria
+  // antes de llegar a distancia de atajada — le daria dos chances de tapar el
+  // mismo tiro (una intercepcion "invisible" por probabilidad, mas la atajada
+  // real) en vez de una unica jugada clara de arquero vs. pateador.
   const shooterTeam = state.shooterTeam;
   const rivalTeam = otherTeam(shooterTeam);
-  if (!state.interceptUsed[rivalTeam]){
+  if (!state.penalty && !state.interceptUsed[rivalTeam]){
     for (const p of active){
       if (p.team !== rivalTeam) continue;
       if (state.interceptRolled.has(p)) continue;
