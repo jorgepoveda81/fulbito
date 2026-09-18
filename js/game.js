@@ -777,6 +777,7 @@ function shoot(holder, dirx, diry, power){
   state.holder = null;
   audio.kick();
   vibrate(15);
+  spawnKickSparks(holder.x, holder.y, dir.x, dir.y, teamColors[holder.team]);
 }
 
 // ============================================================================
@@ -1025,6 +1026,9 @@ function scoreGoal(team){
   spawnConfetti(team==='A' ? W-40 : 40, H/2);
   spawnConfetti(W/2, H/2);
   triggerShake(9);
+  triggerGoalFlash(teamColors[team]);
+  triggerNetRipple(team==='B' ? 'left' : 'right');
+  triggerVarZoom(ball.x, ball.y); // mismo zoom de camara que el VAR: un golpe de impacto para el gol
   audio.goal();
   vibrate([120,60,120,60,220]);
   const concededTeam = team==='A' ? 'B' : 'A';
@@ -1054,6 +1058,11 @@ function resolveSinglePenaltyGoal(team){
     if (lastShooterRef && lastShooterRef.team===team) statFor(lastShooterRef).goals++;
     updateScoreboard();
     flashMessage('&#9917; ¡GOL de penal!', '', 1500, true);
+    spawnConfetti(ball.x, ball.y);
+    triggerShake(9);
+    triggerGoalFlash(teamColors[team]);
+    triggerNetRipple(ball.x < W/2 ? 'left' : 'right');
+    audio.goal();
   }
   const kicking = state.penalty.kickingTeam;
   state.penalty = null;
@@ -1106,6 +1115,12 @@ function setupPenaltyKick(forTeamArg, defTeamArg, mode){
 function registerPenaltyGoal(team){
   const p = state.penalty;
   if (team==='A') p.scoreA++; else p.scoreB++;
+  flashMessage('&#9917; ¡GOL!', `${teamName(team)} convierte`, 900, true);
+  spawnConfetti(ball.x, ball.y);
+  triggerShake(9);
+  triggerGoalFlash(teamColors[team]);
+  triggerNetRipple(ball.x < W/2 ? 'left' : 'right');
+  audio.goal();
   advancePenalty();
 }
 function resolvePenaltyRest(){
@@ -1243,6 +1258,61 @@ function updateShake(dt){
   if (shake.time>0){ shake.time = Math.max(0, shake.time-dt); }
 }
 
+// Chispas cortas en el punto de patada: dan sensacion de impacto a cada tiro/pase,
+// no solo al gol.
+let kickSparks = [];
+function spawnKickSparks(x, y, dirx, diry, color){
+  for (let i=0;i<7;i++){
+    const spread = (Math.random()-0.5)*1.3;
+    const ang = Math.atan2(diry,dirx) + spread;
+    const spd = 90 + Math.random()*130;
+    kickSparks.push({
+      x, y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd,
+      life: 1, color: Math.random()<0.5 ? color : '#ffffff', size: 2+Math.random()*2,
+    });
+  }
+}
+function updateKickSparks(dt){
+  kickSparks.forEach(p=>{ p.x += p.vx*dt; p.y += p.vy*dt; p.vx*=0.9; p.vy*=0.9; p.life -= dt*3.2; });
+  kickSparks = kickSparks.filter(p=>p.life>0);
+}
+function drawKickSparks(){
+  kickSparks.forEach(p=>{
+    ctx.globalAlpha = Math.max(0,p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+// Flash de color en toda la pantalla al marcar un gol: un golpe visual breve
+// que se suma al confeti y la sacudida, para que el gol se sienta como el
+// momento mas grande del partido.
+const GOAL_FLASH_DURATION = 0.5;
+let goalFlash = { time:0, color:'#ffffff' };
+function triggerGoalFlash(color){ goalFlash = { time:GOAL_FLASH_DURATION, color }; }
+function updateGoalFlash(dt){ if (goalFlash.time>0) goalFlash.time = Math.max(0, goalFlash.time-dt); }
+function drawGoalFlash(){
+  if (goalFlash.time<=0) return;
+  const f = goalFlash.time/GOAL_FLASH_DURATION;
+  const grad = ctx.createRadialGradient(W/2,H/2,0, W/2,H/2, Math.max(W,H)*0.75);
+  grad.addColorStop(0, hexToRgba(goalFlash.color, 0));
+  grad.addColorStop(0.55, hexToRgba(goalFlash.color, 0.16*f));
+  grad.addColorStop(1, hexToRgba(goalFlash.color, 0.34*f));
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+}
+
+// La red se sacude un instante del lado donde entro el balon, como si de
+// verdad hubiera frenado el tiro.
+const NET_RIPPLE_DURATION = 0.45;
+let netRipple = { left:0, right:0 };
+function triggerNetRipple(side){ netRipple[side] = NET_RIPPLE_DURATION; }
+function updateNetRipple(dt){
+  if (netRipple.left>0) netRipple.left = Math.max(0, netRipple.left-dt);
+  if (netRipple.right>0) netRipple.right = Math.max(0, netRipple.right-dt);
+}
+
 // SECCION 7 — Zoom de camara para el VAR de posesion, y animacion del sorteo inicial
 const VAR_ZOOM_DURATION = 0.8;
 let varZoom = { time:0, x:0, y:0 };
@@ -1298,9 +1368,11 @@ function draw(){
   drawPlayers();
   drawAimAndPower();
   if (state.phase!=='formation') drawBall();
+  drawKickSparks();
   drawConfetti();
   if (state.phase==='sorteo') drawCoinFlip();
   ctx.restore();
+  drawGoalFlash();
 }
 function drawField(){
   const stripes=10;
@@ -1325,15 +1397,17 @@ function drawField(){
   // red: cuadricula prolija en vez de diagonal, se lee mejor como arco
   ctx.strokeStyle='rgba(255,255,255,0.28)'; ctx.lineWidth=1;
   const netCols=5, netRows=8, goalH=GOAL_BOTTOM-GOAL_TOP;
+  const leftPush = netRipple.left>0 ? Math.sin((netRipple.left/NET_RIPPLE_DURATION)*Math.PI*3) * 6 * (netRipple.left/NET_RIPPLE_DURATION) : 0;
+  const rightPush = netRipple.right>0 ? Math.sin((netRipple.right/NET_RIPPLE_DURATION)*Math.PI*3) * 6 * (netRipple.right/NET_RIPPLE_DURATION) : 0;
   for(let i=0;i<=netCols;i++){
     const gx=i*(26/netCols);
-    ctx.beginPath(); ctx.moveTo(gx,GOAL_TOP); ctx.lineTo(gx,GOAL_BOTTOM); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(W-gx,GOAL_TOP); ctx.lineTo(W-gx,GOAL_BOTTOM); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gx-leftPush,GOAL_TOP); ctx.lineTo(gx-leftPush,GOAL_BOTTOM); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W-gx+rightPush,GOAL_TOP); ctx.lineTo(W-gx+rightPush,GOAL_BOTTOM); ctx.stroke();
   }
   for(let j=0;j<=netRows;j++){
     const gy=GOAL_TOP+j*(goalH/netRows);
-    ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(26,gy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(W-26,gy); ctx.lineTo(W,gy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0-leftPush,gy); ctx.lineTo(26-leftPush,gy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W-26+rightPush,gy); ctx.lineTo(W+rightPush,gy); ctx.stroke();
   }
   // postes bien marcados, con remate redondeado arriba y abajo
   ctx.lineWidth=5;
@@ -1508,8 +1582,11 @@ function loop(now){
 
   if (state.mode==='vsAI') updateAI(dt);
   updateConfetti(dt);
+  updateKickSparks(dt);
   updateShake(dt);
   updateVarZoom(dt);
+  updateGoalFlash(dt);
+  updateNetRipple(dt);
   updateHud();
   draw();
   requestAnimationFrame(loop);
