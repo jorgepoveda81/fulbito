@@ -360,6 +360,23 @@ const handoffOverlay = document.getElementById('handoffOverlay');
 const handoffText = document.getElementById('handoffText');
 const handoffContinue = document.getElementById('handoffContinue');
 
+// Tutorial de "como se juega": se muestra una sola vez, la primera vez que alguien
+// arranca un partido en este celular (antes de elegir poderes), y nunca mas.
+const TUTORIAL_SEEN_KEY = 'fulbito_tutorial_seen';
+const tutorialOverlay = document.getElementById('tutorialOverlay');
+const tutorialContinue = document.getElementById('tutorialContinue');
+function maybeShowTutorial(next){
+  let seen = false;
+  try { seen = localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'; } catch(e){}
+  if (seen){ next(); return; }
+  tutorialOverlay.classList.remove('hidden');
+  tutorialContinue.onclick = () => {
+    tutorialOverlay.classList.add('hidden');
+    try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch(e){}
+    next();
+  };
+}
+
 let pickingTeam = 'A';
 let tempPick = [];
 
@@ -1613,7 +1630,7 @@ menuContinue.onclick = () => {
   document.getElementById('tagAName').textContent = state.teamNames.A;
   document.getElementById('tagBName').textContent = state.teamNames.B;
   mainMenuOverlay.classList.add('hidden');
-  beginPowerSelection();
+  maybeShowTutorial(beginPowerSelection);
 };
 
 // ============================================================================

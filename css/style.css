@@ -134,6 +134,9 @@ canvas{
 .diff-card{ text-align:center; padding:8px 4px; }
 .diff-card b{ font-size:12px; }
 
+.tutorial-list{ text-align:left; margin:0 0 16px; padding-left:20px; color:var(--text); font-size:13.5px; line-height:1.6; }
+.tutorial-list li{ margin-bottom:6px; }
+
 .name-inputs{ display:flex; gap:10px; margin-bottom:12px; }
 .name-field{ flex:1; text-align:left; }
 .name-field label{ display:block; font-size:11px; color:var(--sub); margin-bottom:4px; }

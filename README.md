@@ -83,6 +83,7 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 - Los 10 poderes de la seccion 11, elegidos en secreto antes de cada partido.
 - Modo 1 jugador contra la PC, con 3 niveles de dificultad (Facil/Normal/Dificil) elegibles al armar el partido.
 - Nombres de equipo personalizables, sonido, vibracion en celular, confeti y camara con sacudida en los goles.
+- Tutorial de "Como se juega" la primera vez que alguien toca Jugar en ese celular (nunca mas despues, salvo borrar los datos del sitio).
 - Pantalla **Ajustes** (sonido/vibracion on-off) para cualquier jugador, separada de la pantalla de pruebas.
 - **Modo desarrollador** oculto: tocar el titulo "FULBITO" 5 veces seguidas muestra la pantalla de pruebas (ajustar en vivo los valores que el documento marca como "POR DEFINIR"). No aparece para un jugador comun.
 
