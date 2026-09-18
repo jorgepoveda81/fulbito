@@ -1,7 +1,9 @@
 /* Estilos de las pantallas de cuenta/equipo/tienda (fuera del partido en si). */
 
 .notice-card, .home-card, .profile-card, .roster-card, .collection-card, .creator-card, .coins-badge{
-  background:var(--panel); border:1px solid #263033; border-radius:14px; padding:14px 16px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.025), transparent 40%), var(--panel);
+  border:1px solid #263033; border-top:1px solid #33403f; border-radius:16px; padding:15px 17px;
+  box-shadow:0 6px 16px -10px rgba(0,0,0,0.65);
 }
 .notice-card{ color:var(--sub); font-size:13px; line-height:1.5; }
 .notice-card code{ background:var(--panel2); padding:1px 5px; border-radius:4px; }
@@ -11,7 +13,11 @@
   width:100%; background:var(--panel2); border:1px solid #2c383d; border-radius:8px;
   padding:10px 12px; color:var(--text); font-family:'Inter'; font-weight:700; font-size:14px; margin-bottom:10px;
 }
-.coins-badge{ font-weight:700; font-size:13px; color:var(--gold); padding:10px 14px; }
+.coins-badge{
+  font-weight:800; font-size:13.5px; color:var(--gold); padding:11px 16px;
+  background:linear-gradient(90deg, rgba(255,201,77,0.14), rgba(255,201,77,0.04));
+  border-color:rgba(255,201,77,0.3);
+}
 
 .auth-toggle{ display:flex; gap:6px; margin-bottom:12px; background:var(--panel2); border-radius:10px; padding:4px; }
 .auth-toggle-btn{
@@ -25,7 +31,14 @@
   width:32px; height:32px; border-radius:50%; border:3px solid transparent; cursor:pointer; padding:0;
 }
 .color-swatch.selected{ border-color:#fff; box-shadow:0 0 0 2px rgba(0,0,0,0.4); }
-.play-btn{ font-size:16px; padding:16px; background:var(--teamA); margin-top:0; }
+.play-btn{
+  font-family:'Archivo Black',sans-serif; font-size:17px; letter-spacing:0.5px; padding:17px; margin-top:0;
+  background:linear-gradient(180deg, #ffd873, var(--gold) 55%, var(--gold-dark));
+  color:#241a04; box-shadow:0 4px 0 0 #8a5f12, 0 10px 22px -8px rgba(255,201,77,0.55);
+  animation:playPulse 2.4s ease-in-out infinite;
+}
+.play-btn:active{ box-shadow:0 1px 0 0 #8a5f12, 0 4px 12px -6px rgba(255,201,77,0.5); }
+@keyframes playPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.12); } }
 .home-blurb{ color:var(--sub); font-size:12.5px; text-align:center; line-height:1.5; padding:0 6px; }
 
 .roster-card h3, .collection-card h3, .creator-card h3{ margin:0 0 10px; font-size:14px; color:var(--gold); }

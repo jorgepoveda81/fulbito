@@ -11,6 +11,7 @@ const DEFAULT_COLOR_A = '#2f6fe0';
 const DEFAULT_COLOR_B = '#e0432f'; // color de arranque del Equipo B; si en modo 2 jugadores se encuentra
 // su cuenta por nombre, game.js pisa este color con el suyo (ver el buscador de "Jugador 2" en game.js)
 
+const appHero = document.querySelector('.app-hero');
 const appShell = document.getElementById('appShell');
 const gameRoot = document.getElementById('gameRoot');
 const tabs = document.querySelectorAll('.app-tab');
@@ -37,12 +38,14 @@ async function goPlay(){
   if (colorA === DEFAULT_COLOR_B) colorA = DEFAULT_COLOR_A; // no pueden coincidir con el Equipo B
   window.FulbitoGame.setTeamColors({ A: colorA, B: DEFAULT_COLOR_B });
 
+  appHero.classList.add('hidden');
   appShell.classList.add('hidden');
   gameRoot.classList.remove('hidden');
   window.FulbitoGame.showModeMenu();
 }
 document.getElementById('backToMenu').onclick = () => {
   gameRoot.classList.add('hidden');
+  appHero.classList.remove('hidden');
   appShell.classList.remove('hidden');
 };
 
