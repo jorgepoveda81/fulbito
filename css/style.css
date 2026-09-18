@@ -81,6 +81,13 @@ h1{
 .fb-zones{ display:flex; gap:12px; flex-wrap:wrap; font-size:11.5px; color:var(--sub); font-weight:600; }
 .fb-ready{ margin-top:0; width:auto; padding:9px 18px; background:var(--teamA); }
 
+.summary-body{ display:flex; flex-direction:column; gap:4px; width:100%; }
+.summary-row{ display:flex; align-items:center; gap:10px; font-size:12.5px; padding:4px 0; border-bottom:1px solid #212b2f; }
+.summary-row:last-child{ border-bottom:none; }
+.summary-row .sj{ color:var(--gold); font-weight:700; width:22px; flex:none; }
+.summary-row .sn{ flex:1; }
+.summary-row .ss{ color:var(--sub); flex:none; }
+
 .field-wrap{ position:relative; width:100%; max-width:900px; }
 canvas{
   width:100%; height:auto; display:block; border-radius:16px;

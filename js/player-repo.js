@@ -58,3 +58,18 @@ export async function saveTeam(roster){
   const { db, fsMod } = fb;
   await fsMod.setDoc(fsMod.doc(db, 'teams', user.uid), { roster, updatedAt: Date.now() });
 }
+
+// stats: [{ ownedId, goals, shots, saves }] — estadisticas de la partida que se acaba de jugar,
+// se suman (no se reemplazan) al historial de cada jugador de la coleccion.
+export async function addCareerStats(stats){
+  const fb = await getFirebase();
+  const user = getCurrentUser();
+  if (!fb || !user || !stats || !stats.length) return;
+  const { db, fsMod } = fb;
+  await Promise.all(stats.map(s => fsMod.updateDoc(fsMod.doc(db, 'players', s.ownedId), {
+    careerMatches: fsMod.increment(1),
+    careerGoals: fsMod.increment(s.goals||0),
+    careerShots: fsMod.increment(s.shots||0),
+    careerSaves: fsMod.increment(s.saves||0),
+  }).catch(()=>{}))); // si el jugador se borro de la coleccion mientras tanto, no rompe nada
+}

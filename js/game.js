@@ -124,6 +124,7 @@ function applyRosterOverride(){
     if (!ov) return;
     if (ov.skills) p.skills = { ...ov.skills };
     if (ov.name) p.displayName = ov.name;
+    if (ov.id) p.ownedId = ov.id;
   });
 }
 function captainOf(team){ return players.find(p=>p.team===team && p.isCaptain); }
@@ -316,23 +317,16 @@ function vibrate(pattern){
 // SECCION 10 — Zona fantasma
 // 5% del area de la cancha, no sobre la linea del area grande (recomendacion del doc)
 // ============================================================================
-const GHOST_RADIUS = Math.sqrt(0.05 * (W*H) / Math.PI);
+const GHOST_RADIUS = Math.sqrt(0.05 * (W*H) / Math.PI) * 0.5; // 50% mas chica que el 5% del area recomendado
 function placeGhostZone(team){
-  const marginX = 100, marginY = 70;
-  let x, y;
-  if (team === 'A'){
-    x = marginX + GHOST_RADIUS + Math.random() * (W/2 - marginX - GHOST_RADIUS*2 - 40);
-  } else {
-    x = W/2 + 40 + Math.random() * (W/2 - marginX - GHOST_RADIUS*2 - 40);
-  }
-  y = marginY + GHOST_RADIUS + Math.random() * (H - marginY*2 - GHOST_RADIUS*2);
+  const marginX = 60, marginY = 60;
+  const x = marginX + GHOST_RADIUS + Math.random() * (W - marginX*2 - GHOST_RADIUS*2);
+  const y = marginY + GHOST_RADIUS + Math.random() * (H - marginY*2 - GHOST_RADIUS*2);
   return { x, y, revealed:false, team };
 }
 function clampGhostPos(team, x, y){
-  const marginX = 100, marginY = 70;
-  const cx = team === 'A'
-    ? clamp(x, marginX+GHOST_RADIUS, W/2-40-GHOST_RADIUS)
-    : clamp(x, W/2+40+GHOST_RADIUS, W-marginX-GHOST_RADIUS);
+  const marginX = 60, marginY = 60;
+  const cx = clamp(x, marginX+GHOST_RADIUS, W-marginX-GHOST_RADIUS);
   const cy = clamp(y, marginY+GHOST_RADIUS, H-marginY-GHOST_RADIUS);
   return { x:cx, y:cy };
 }
@@ -408,6 +402,8 @@ const formationBar = document.getElementById('formationBar');
 const fbTitle = document.getElementById('fbTitle');
 const fbZones = document.getElementById('fbZones');
 const fbReady = document.getElementById('fbReady');
+const matchSummary = document.getElementById('matchSummary');
+const matchSummaryBody = document.getElementById('matchSummaryBody');
 
 function beginFormation(){
   resetPlayers();
@@ -424,7 +420,7 @@ function renderFormationBar(){
     fbTitle.textContent = `${teamName(state.formingTeam)}: arrastra tus jugadores a su lugar`;
     fbReady.textContent = 'Listo, elegir zona fantasma ▶';
   } else {
-    fbTitle.textContent = `${teamName(state.formingTeam)}: toca tu mitad para esconder tu zona fantasma`;
+    fbTitle.textContent = `${teamName(state.formingTeam)}: toca la cancha para esconder tu zona fantasma`;
     fbReady.textContent = 'Confirmar zona fantasma ▶';
   }
   updateFormationZoneCounts();
@@ -560,12 +556,18 @@ function pointerUp(){
   state.lastActionType = towardRivalGoal ? 'tiro' : 'pase';
   shoot(holder, dx/dist, dy/dist, power);
 }
-canvas.addEventListener('mousedown', e=>pointerDown(e.clientX,e.clientY));
-window.addEventListener('mousemove', e=>pointerMove(e.clientX,e.clientY));
-window.addEventListener('mouseup', pointerUp);
-canvas.addEventListener('touchstart', e=>{ const t=e.touches[0]; pointerDown(t.clientX,t.clientY); e.preventDefault(); }, {passive:false});
-canvas.addEventListener('touchmove', e=>{ const t=e.touches[0]; pointerMove(t.clientX,t.clientY); e.preventDefault(); }, {passive:false});
-canvas.addEventListener('touchend', e=>{ pointerUp(); e.preventDefault(); }, {passive:false});
+// Mientras le toca tirar a la PC, el mouse/dedo del humano no debe pisarle la puntaria
+// (pointerMove no distingue quien la mueve, asi que hay que frenarlo en el turno de la IA).
+function humanInputAllowed(){
+  if (state.phase !== 'aiming' && state.phase !== 'flying') return true; // formacion, sorteo, etc.
+  return !(state.mode==='vsAI' && state.turnTeam==='B');
+}
+canvas.addEventListener('mousedown', e=>{ if (humanInputAllowed()) pointerDown(e.clientX,e.clientY); });
+window.addEventListener('mousemove', e=>{ if (humanInputAllowed()) pointerMove(e.clientX,e.clientY); });
+window.addEventListener('mouseup', ()=>{ if (humanInputAllowed()) pointerUp(); });
+canvas.addEventListener('touchstart', e=>{ const t=e.touches[0]; if (humanInputAllowed()) pointerDown(t.clientX,t.clientY); e.preventDefault(); }, {passive:false});
+canvas.addEventListener('touchmove', e=>{ const t=e.touches[0]; if (humanInputAllowed()) pointerMove(t.clientX,t.clientY); e.preventDefault(); }, {passive:false});
+canvas.addEventListener('touchend', e=>{ if (humanInputAllowed()) pointerUp(); e.preventDefault(); }, {passive:false});
 
 // ============================================================================
 // Poderes — botones e interaccion
@@ -668,7 +670,22 @@ function applyPrecisionDeviation(dirx, diry, precision, power){
   const cos = Math.cos(rad), sin = Math.sin(rad);
   return { x: dirx*cos - diry*sin, y: dirx*sin + diry*cos };
 }
+// ============================================================================
+// Estadisticas de la partida en curso, por jugador (identificado por equipo+camiseta,
+// que se mantiene estable aunque resetPlayers() reconstruya los objetos tras un gol).
+// ============================================================================
+let matchStats = {};
+function statKey(p){ return `${p.team}#${p.jersey}`; }
+function statFor(p){
+  const key = statKey(p);
+  if (!matchStats[key]) matchStats[key] = { team:p.team, jersey:p.jersey, name: p.displayName||null, ownedId: p.ownedId||null, goals:0, shots:0, saves:0 };
+  if (p.displayName) matchStats[key].name = p.displayName;
+  if (p.ownedId) matchStats[key].ownedId = p.ownedId;
+  return matchStats[key];
+}
+
 function shoot(holder, dirx, diry, power){
+  statFor(holder).shots++;
   state.shooterTeam = holder.team;
   state.interceptUsed = { A:false, B:false }; // nuevo intento de intercepcion disponible (seccion 8)
   state.interceptRolled.clear();
@@ -753,6 +770,7 @@ function updateBall(dt){
         const sk = p.skills;
         const catchSkill = (sk.altura+sk.velocidad+sk.volada+sk.salto)/4;
         const catchThreshold = 200 + catchSkill*70;
+        statFor(p).saves++;
         if (incomingSpeed < catchThreshold){
           ball.x = p.x; ball.y = p.y; ball.vx = 0; ball.vy = 0; ball.flying = false;
           flashMessage('&#129508; ¡Atajada segura!', `${teamName(p.team)} controla el balon`, 900);
@@ -868,6 +886,7 @@ function resolveEndpoint(){
   } else {
     // VAR de posesion: gana el aura mas cercana al centro final del balon.
     // Si la diferencia es menor al umbral configurado, desempata por ms dentro del aura.
+    triggerVarZoom(ball.x, ball.y);
     const sorted = inside.slice().sort((a,b)=>{
       const da = Math.hypot(ball.x-a.x, ball.y-a.y);
       const db = Math.hypot(ball.x-b.x, ball.y-b.y);
@@ -893,7 +912,7 @@ function resolveEndpoint(){
       detail = ` (d:${d1.toFixed(0)}px${sorted[1]?`/${d2.toFixed(0)}px`:''})`;
       state.revisionVarPending = false;
     }
-    flashMessage('&#128250; VAR de posesion', `Gana ${winner.team==='A'?'Equipo A':'Equipo B'}${detail}`, 1300);
+    flashMessage('&#128250; VAR de posesion', `Gana ${teamName(winner.team)}${detail}`, 1300);
   }
   startTurn(winner.team, winner);
 }
@@ -939,6 +958,7 @@ function scoreGoal(team){
   if (state.pendingSinglePenalty){ resolveSinglePenaltyGoal(team); return; }
   if (state.penalty){ registerPenaltyGoal(team); return; }
   if (team==='A') state.scoreA++; else state.scoreB++;
+  if (lastShooterRef && lastShooterRef.team===team) statFor(lastShooterRef).goals++;
   updateScoreboard();
   flashMessage('&#9917; ¡GOOOOL!', `${teamName(team)} marca`, 1700, true);
   spawnConfetti(team==='A' ? W-40 : 40, H/2);
@@ -970,6 +990,7 @@ function resolveSinglePenaltyGoal(team){
   state.pendingSinglePenalty = null;
   if (team === state.penalty.kickingTeam){
     if (team==='A') state.scoreA++; else state.scoreB++;
+    if (lastShooterRef && lastShooterRef.team===team) statFor(lastShooterRef).goals++;
     updateScoreboard();
     flashMessage('&#9917; ¡GOL de penal!', '', 1500, true);
   }
@@ -1050,7 +1071,24 @@ function finishPenalties(){
   notifyMatchEnd(p.scoreA>p.scoreB ? 'win' : 'loss'); // en penales no hay empate
 }
 function notifyMatchEnd(resultForA){
-  if (window.FulbitoGame && window.FulbitoGame.onMatchEnd) window.FulbitoGame.onMatchEnd(resultForA);
+  renderMatchSummary();
+  const statsForA = Object.values(matchStats).filter(s => s.team==='A' && s.ownedId);
+  if (window.FulbitoGame && window.FulbitoGame.onMatchEnd) window.FulbitoGame.onMatchEnd(resultForA, statsForA);
+}
+function renderMatchSummary(){
+  const rows = Object.values(matchStats)
+    .filter(s => s.team==='A' && (s.goals||s.shots||s.saves))
+    .sort((a,b)=> b.goals-a.goals || b.shots-a.shots);
+  if (!rows.length){ matchSummary.classList.add('hidden'); return; }
+  matchSummaryBody.innerHTML = rows.map(s => {
+    const who = s.name || `Jugador ${s.jersey}`;
+    const parts = [];
+    if (s.goals) parts.push(`${s.goals} gol${s.goals===1?'':'es'}`);
+    if (s.shots) parts.push(`${s.shots} tiro${s.shots===1?'':'s'}`);
+    if (s.saves) parts.push(`${s.saves} atajada${s.saves===1?'':'s'}`);
+    return `<div class="summary-row"><span class="sj">${s.jersey}</span><span class="sn">${who}</span><span class="ss">${parts.join(' &middot; ')}</span></div>`;
+  }).join('');
+  matchSummary.classList.remove('hidden');
 }
 
 // ============================================================================
@@ -1146,6 +1184,36 @@ function updateShake(dt){
   if (shake.time>0){ shake.time = Math.max(0, shake.time-dt); }
 }
 
+// SECCION 7 — Zoom de camara para el VAR de posesion, y animacion del sorteo inicial
+const VAR_ZOOM_DURATION = 0.8;
+let varZoom = { time:0, x:0, y:0 };
+function triggerVarZoom(x,y){ varZoom = { time:VAR_ZOOM_DURATION, x, y }; }
+function updateVarZoom(dt){
+  if (varZoom.time>0) varZoom.time = Math.max(0, varZoom.time-dt);
+}
+let coinFlip = null; // { resultTeam, startTime }
+function drawCoinFlip(){
+  if (!coinFlip) return;
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.fillRect(0,0,W,H);
+  const elapsed = performance.now() - coinFlip.startTime;
+  const t = Math.min(1, elapsed/1200);
+  const angle = t*6*Math.PI*2;
+  const showResult = t>=1;
+  const showTeam = showResult ? coinFlip.resultTeam : (Math.cos(angle)>0 ? 'A' : 'B');
+  const scaleX = showResult ? 1 : Math.max(0.12, Math.abs(Math.cos(angle)));
+  ctx.save();
+  ctx.translate(W/2,H/2);
+  ctx.scale(scaleX,1);
+  ctx.beginPath(); ctx.arc(0,0,42,0,Math.PI*2);
+  ctx.fillStyle = teamColors[showTeam];
+  ctx.fill();
+  ctx.lineWidth=4; ctx.strokeStyle='#fff'; ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle='#fff'; ctx.font='bold 17px Inter'; ctx.textAlign='center';
+  ctx.fillText(showResult ? `¡Arranca ${teamName(coinFlip.resultTeam)}!` : 'Sorteo...', W/2, H/2+72);
+}
+
 // ============================================================================
 // Dibujo
 // ============================================================================
@@ -1154,6 +1222,13 @@ function draw(){
   if (shake.time>0){
     const f = shake.time/0.35;
     ctx.translate((Math.random()*2-1)*shake.mag*f, (Math.random()*2-1)*shake.mag*f);
+  }
+  if (varZoom.time>0){
+    const f = varZoom.time/VAR_ZOOM_DURATION;
+    const scale = 1 + 0.35*Math.sin(f*Math.PI); // crece y vuelve, como un zoom de camara
+    ctx.translate(varZoom.x, varZoom.y);
+    ctx.scale(scale, scale);
+    ctx.translate(-varZoom.x, -varZoom.y);
   }
   ctx.clearRect(-20,-20,W+40,H+40);
   drawField();
@@ -1165,6 +1240,7 @@ function draw(){
   drawAimAndPower();
   if (state.phase!=='formation') drawBall();
   drawConfetti();
+  if (state.phase==='sorteo') drawCoinFlip();
   ctx.restore();
 }
 function drawField(){
@@ -1374,6 +1450,7 @@ function loop(now){
   if (state.mode==='vsAI') updateAI(dt);
   updateConfetti(dt);
   updateShake(dt);
+  updateVarZoom(dt);
   updateHud();
   draw();
   requestAnimationFrame(loop);
@@ -1412,6 +1489,8 @@ function updateHud(){
 // ============================================================================
 function startMatch(){
   state.scoreA=0; state.scoreB=0;
+  matchStats = {};
+  matchSummary.classList.add('hidden');
   state.matchTimeLeft = settings.matchSeconds;
   state.usedPowers = { A:{}, B:{} };
   state.impulsoActive = { A:false, B:false };
@@ -1432,8 +1511,14 @@ function startMatch(){
   resetPlayers();
   document.getElementById('matchtime').textContent = fmtTime(state.matchTimeLeft);
   const startTeam = Math.random()<0.5 ? 'A' : 'B';
-  startTurn(startTeam, keeperOf(startTeam));
-  startMatchClock();
+  state.phase = 'sorteo';
+  coinFlip = { resultTeam: startTeam, startTime: performance.now() };
+  audio.whistle();
+  setTimeout(()=>{
+    coinFlip = null;
+    startTurn(startTeam, keeperOf(startTeam));
+    startMatchClock();
+  }, 1500);
 }
 
 // ============================================================================

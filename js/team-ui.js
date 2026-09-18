@@ -101,7 +101,8 @@ async function renderTeamScreen(container){
   owned.forEach(p => {
     const card = document.createElement('div');
     card.className = 'player-chip';
-    card.innerHTML = `<b>${escapeHtml(p.name)}</b><span>${p.role} &middot; ${describeSkills(p)}</span>`;
+    const career = p.careerMatches ? `<span>&#127942; ${p.careerGoals||0} goles en ${p.careerMatches} partido${p.careerMatches===1?'':'s'}</span>` : '';
+    card.innerHTML = `<b>${escapeHtml(p.name)}</b><span>${p.role} &middot; ${describeSkills(p)}</span>${career}`;
     grid.appendChild(card);
   });
 }
