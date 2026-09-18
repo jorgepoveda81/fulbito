@@ -47,6 +47,7 @@ js/game.js                     el motor del partido (fisica, reglas, IA, sonido,
 js/app.js                       arranca todo y conecta las pantallas nuevas con game.js
 js/firebase-init.js             configuracion de Firebase (claves)
 js/auth.js                      cuentas (invitado o nombre+PIN) y perfil (nombre, monedas, resultados)
+js/economy.js                   cuanto se gana en monedas por cada resultado (nunca dinero real)
 js/auth-ui.js                    pantalla para crear cuenta / iniciar sesion / jugar de invitado
 js/player-repo.js               leer/guardar jugadores propios y el equipo en Firestore
 js/store-data.js                catalogo de jugadores de la tienda + equipo inicial gratis
@@ -63,6 +64,7 @@ docs/REGLAS_v1.0.md              las reglas de diseño del juego
 docs/FIREBASE_SETUP.md           como activar cuentas/tienda
 tests/rules-core.test.js         tests de js/rules-core.js (node --test, sin dependencias)
 tests/store-data.test.js         valida el catalogo de la tienda (sumas de 11/7, ids unicos, sin pay to win)
+tests/economy.test.js            valida las recompensas en monedas por resultado de partido
 package.json                     "npm test" corre los tests
 ```
 

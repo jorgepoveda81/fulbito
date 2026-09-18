@@ -2,7 +2,7 @@
 // propios) para que abra sin conexion despues de la primera visita. No toca
 // Firebase (auth/firestore/CDN): esos pedidos van directo a la red, si no hay
 // conexion simplemente el juego sigue en modo local como ya hace sin Firebase.
-const CACHE_NAME = 'fulbito-shell-v1';
+const CACHE_NAME = 'fulbito-shell-v2';
 const SHELL_FILES = [
   './',
   './index.html',
@@ -15,12 +15,14 @@ const SHELL_FILES = [
   './js/firebase-init.js',
   './js/auth.js',
   './js/auth-ui.js',
+  './js/economy.js',
   './js/player-repo.js',
   './js/store-data.js',
   './js/player-creator.js',
   './js/menu-ui.js',
   './js/team-ui.js',
   './js/store-ui.js',
+  './js/settings-ui.js',
   './icons/icon.svg',
 ];
 

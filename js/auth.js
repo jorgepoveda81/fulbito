@@ -1,4 +1,5 @@
 import { getFirebase, isFirebaseConfigured } from './firebase-init.js';
+import { coinsForResult } from './economy.js';
 
 let currentUser = null; // { uid, username, coins, wins, losses, draws, color, isAnonymous }
 let status = 'loading'; // 'loading' | 'signedOut' | 'ready' | 'failed' | 'unconfigured'
@@ -162,7 +163,7 @@ export async function recordMatchResult(result){
   if (!fb || !currentUser) return 0;
   const { db, fsMod } = fb;
   const field = result === 'win' ? 'wins' : result === 'loss' ? 'losses' : 'draws';
-  const coinsEarned = result === 'win' ? 50 : result === 'draw' ? 20 : 10;
+  const coinsEarned = coinsForResult(result);
   currentUser[field] = (currentUser[field] || 0) + 1;
   currentUser.coins = (currentUser.coins || 0) + coinsEarned;
   await fsMod.updateDoc(fsMod.doc(db, 'profiles', currentUser.uid), { [field]: currentUser[field], coins: currentUser.coins });
