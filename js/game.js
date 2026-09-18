@@ -192,6 +192,7 @@ function powerById(id){ return POWERS.find(p=>p.id===id); }
 // ============================================================================
 const state = {
   mode:'hotseat', // 'hotseat' | 'vsAI'
+  aiDifficulty:'normal', // 'facil' | 'normal' | 'dificil' — solo aplica en modo vsAI
   teamNames: { A:'EQUIPO A', B:'EQUIPO B' },
   scoreA:0, scoreB:0,
   matchTimeLeft: settings.matchSeconds,
@@ -1553,16 +1554,25 @@ const nameBWrap = document.getElementById('nameBWrap');
 const menuContinue = document.getElementById('menuContinue');
 
 const nameBStatus = document.getElementById('nameBStatus');
+const aiDifficultyGrid = document.getElementById('aiDifficultyGrid');
 function selectMode(mode){
   state.mode = mode;
   modeHotseat.classList.toggle('selected', mode==='hotseat');
   modeVsAI.classList.toggle('selected', mode==='vsAI');
   nameBWrap.classList.toggle('disabled', mode==='vsAI');
+  aiDifficultyGrid.classList.toggle('hidden', mode!=='vsAI');
   nameBInput.placeholder = mode==='vsAI' ? 'LA PC' : 'EQUIPO B';
   if (mode==='vsAI'){ rosterOverrideB = null; nameBStatus.textContent=''; }
 }
 modeHotseat.onclick = () => selectMode('hotseat');
 modeVsAI.onclick = () => selectMode('vsAI');
+
+aiDifficultyGrid.querySelectorAll('.diff-card').forEach(card => {
+  card.onclick = () => {
+    state.aiDifficulty = card.dataset.difficulty;
+    aiDifficultyGrid.querySelectorAll('.diff-card').forEach(c => c.classList.toggle('selected', c===card));
+  };
+});
 
 // Selector de Jugador 2 (modo 2 jugadores): si lo que escribio coincide con una cuenta
 // real, usa su equipo y color guardados para ese partido (busqueda de solo lectura,
@@ -1604,32 +1614,71 @@ menuContinue.onclick = () => {
 // IA del Equipo B (modo 1 jugador vs PC)
 // Decide un objetivo simple, "carga" el disparo como lo haria una persona y
 // suelta usando el mismo camino de codigo que un toque humano (pointerUp).
+// La dificultad NUNCA le da informacion que un humano no tendria (todos los
+// jugadores son siempre visibles para los dos lados); lo que cambia entre
+// Facil/Normal/Dificil es la calidad de la decision: que tan bien elige a
+// quien pasarle, que tan calibrada esta la fuerza de carga, que tan lejos
+// se anima a tirar al arco, que tan rapido reacciona, y si aprovecha sus
+// poderes — igual que la diferencia entre un jugador nuevo y uno con oficio.
 // ============================================================================
-const aiState = { thinking:false, releaseAt:0 };
+const AI_DIFFICULTY_PRESETS = {
+  facil:   { reactionMs:[500,950], aimNoise:70, bestMate:false, shotRangeX:300, usePowers:false,
+             keeperPassMs:[300,750], shotMs:[550,1300], passMs:[250,750] },
+  normal:  { reactionMs:[250,500], aimNoise:30, bestMate:true,  shotRangeX:380, usePowers:false,
+             keeperPassMs:[350,600], shotMs:[700,1150], passMs:[320,620] },
+  dificil: { reactionMs:[80,220],  aimNoise:8,  bestMate:true,  shotRangeX:460, usePowers:true,
+             keeperPassMs:[380,520], shotMs:[780,1000], passMs:[350,520] },
+};
+function aiPreset(){ return AI_DIFFICULTY_PRESETS[state.aiDifficulty] || AI_DIFFICULTY_PRESETS.normal; }
+function aiRangeMs([min,max]){ return min + Math.random()*(max-min); }
+// entre los companeros mas avanzados hacia el arco rival, elige uno con algo de variedad
+// (no siempre el mismo) en vez de puro azar entre todos — mejor lectura de la cancha sin ser perfecta
+function aiPickMate(mates){
+  const sorted = mates.slice().sort((a,b)=>a.x-b.x);
+  const topCount = Math.min(2, sorted.length);
+  return sorted[Math.floor(Math.random()*topCount)];
+}
+
+const aiState = { thinking:false, releaseAt:0, lastHolder:null, readyAt:0 };
 function updateAI(dt){
-  if (state.turnTeam !== 'B' || state.phase !== 'aiming') { aiState.thinking=false; return; }
+  if (state.turnTeam !== 'B' || state.phase !== 'aiming') { aiState.thinking=false; aiState.lastHolder=null; return; }
   if (aiState.thinking){
     if (performance.now() >= aiState.releaseAt) { aiState.thinking=false; pointerUp(); }
     return;
   }
   if (aim.active || !state.holder || state.holder.team!=='B') return;
 
+  // demora de "reaccion" antes de decidir, para que Facil se sienta mas lenta/torpe
+  if (aiState.lastHolder !== state.holder){
+    aiState.lastHolder = state.holder;
+    aiState.readyAt = performance.now() + aiRangeMs(aiPreset().reactionMs);
+  }
+  if (performance.now() < aiState.readyAt) return;
+
+  const preset = aiPreset();
   const holder = state.holder;
   let target, isShot, chargeMs;
   if (holder.isKeeper){
-    const mate = players.filter(p=>p.team==='B' && !p.isKeeper)
-      .sort((a,b)=>a.x-b.x)[0]; // el companero mas avanzado hacia el arco rival
+    const mates = players.filter(p=>p.team==='B' && !p.isKeeper);
+    const mate = preset.bestMate ? aiPickMate(mates) : mates[Math.floor(Math.random()*mates.length)];
     target = { x: mate.x, y: mate.y };
-    isShot = false; chargeMs = 350 + Math.random()*250;
-  } else if ((holder.role==='fwd' || holder.isCaptain) && holder.x < 380){
+    isShot = false; chargeMs = aiRangeMs(preset.keeperPassMs);
+  } else if ((holder.role==='fwd' || holder.isCaptain) && holder.x < preset.shotRangeX){
     target = { x: 12, y: H/2 + (Math.random()*70-35) };
-    isShot = true; chargeMs = 700 + Math.random()*450;
+    isShot = true; chargeMs = aiRangeMs(preset.shotMs);
+    if (preset.usePowers && hasPower('B','impulso')) activatePower('B','impulso');
   } else {
     const mates = players.filter(p=>p.team==='B' && p!==holder && p.x < holder.x-20);
-    const mate = mates.length ? mates[Math.floor(Math.random()*mates.length)] : players.find(p=>p.team==='B'&&p.isCaptain);
+    const mate = mates.length ? (preset.bestMate ? aiPickMate(mates) : mates[Math.floor(Math.random()*mates.length)])
+                               : players.find(p=>p.team==='B'&&p.isCaptain);
     target = { x: mate.x, y: mate.y };
-    isShot = false; chargeMs = 320 + Math.random()*300;
+    isShot = false; chargeMs = aiRangeMs(preset.passMs);
   }
+
+  // ruido en la puntaria: representa una decision menos afinada, no una mano mas torpe
+  // (eso ya lo maneja la Precision del jugador al patear, ver applyPrecisionDeviation)
+  const noise = preset.aimNoise;
+  target = { x: target.x + (Math.random()*2-1)*noise, y: target.y + (Math.random()*2-1)*noise };
 
   aim.active = true; aim.charging = true; aim.startTime = performance.now();
   aim.x = target.x; aim.y = target.y;

@@ -77,7 +77,7 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 - Goles, atajadas, reinicios (secc. 9).
 - Zona fantasma secreta por equipo con penal al descubrirla, y tanda de penales con muerte subita (secc. 10).
 - Los 10 poderes de la seccion 11, elegidos en secreto antes de cada partido.
-- Modo 1 jugador contra una IA sencilla (para cuando no hay alguien al lado para jugar).
+- Modo 1 jugador contra la PC, con 3 niveles de dificultad (Facil/Normal/Dificil) elegibles al armar el partido.
 - Nombres de equipo personalizables, sonido, vibracion en celular, confeti y camara con sacudida en los goles.
 - Pantalla **Ajustes** (sonido/vibracion on-off) para cualquier jugador, separada de la pantalla de pruebas.
 - **Modo desarrollador** oculto: tocar el titulo "FULBITO" 5 veces seguidas muestra la pantalla de pruebas (ajustar en vivo los valores que el documento marca como "POR DEFINIR"). No aparece para un jugador comun.
@@ -85,7 +85,7 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 ## Simplificaciones conocidas (para seguir mejorando)
 
 - El tiro es de puntaria libre (arrastrar y soltar), no el sistema de 9 zonas fijas del documento (seccion 9). Se decidio a proposito dejarlo asi.
-- La IA es basica: pasa hacia adelante y tira si esta cerca del arco. No usa poderes ni jugadas elaboradas, y siempre juega con el equipo por defecto (no tiene cuenta propia).
+- La IA sigue siendo pasa-hacia-adelante-y-tira-cerca-del-arco (no jugadas elaboradas ni cuenta propia), pero ahora la dificultad cambia que tan bien lo hace: en Facil reacciona lento, apunta con ruido, tira solo de muy cerca y calibra mal la fuerza; en Dificil reacciona casi al toque, apunta preciso, se anima a tirar desde mas lejos, calibra la fuerza con consistencia y usa "Impulso" antes de tirar si lo tiene disponible. Nunca ve mas de lo que veria un jugador humano (todo el estado es siempre visible para los dos lados).
 - En el modo de 2 jugadores, el Equipo B usa su equipo/color guardados solo si escribiste el nombre de una cuenta real que exista (busqueda de solo lectura); las monedas y estadisticas de esa partida solo se acreditan a la cuenta que esta con la sesion iniciada en el celular (el Equipo A), no al Equipo B.
 - Solo se pueden crear jugadores de campo/capitan (11 puntos). Crear arqueros personalizados (7 puntos) queda pendiente.
 - Las monedas se suman desde el navegador al terminar el partido; alguien que sepa tocar el codigo podria darse monedas de mas. Para una cuenta privada entre ustedes dos no es un problema real; si en algun momento se abre a mas gente, conviene mover ese calculo a una funcion de servidor (Firebase Cloud Functions).

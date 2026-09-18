@@ -130,6 +130,10 @@ canvas{
 .ps-card span{ display:block; font-size:11px; color:var(--sub); margin-top:2px; }
 .ps-card.selected{ border-color:var(--gold); background:rgba(255,201,77,0.12); }
 
+.diff-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:12px; }
+.diff-card{ text-align:center; padding:8px 4px; }
+.diff-card b{ font-size:12px; }
+
 .name-inputs{ display:flex; gap:10px; margin-bottom:12px; }
 .name-field{ flex:1; text-align:left; }
 .name-field label{ display:block; font-size:11px; color:var(--sub); margin-bottom:4px; }
