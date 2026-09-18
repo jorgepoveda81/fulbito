@@ -393,7 +393,8 @@ function openPickerFor(team){
   psTitle.textContent = `${teamName(team)}: elige 2 poderes`;
   psGrid.innerHTML = '';
   POWERS.forEach(p => {
-    const card = document.createElement('div');
+    const card = document.createElement('button');
+    card.type = 'button';
     card.className = 'ps-card';
     card.innerHTML = `<b>${p.name}</b><span>${p.desc}</span>`;
     card.onclick = () => {
