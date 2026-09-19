@@ -1967,6 +1967,7 @@ let onlineUnwatch = null;
 let onlineSeq = 0;
 let onlineLastPublishedKey = null;
 let onlineMatchStarting = false;
+let onlineAbandoned = false; // true una vez que ya avisamos y estamos volviendo al menu
 
 function onlineStableKey(){
   return [state.phase, state.turnTeam, state.formingTeam, state.formationStep,
@@ -2020,11 +2021,20 @@ function beginOnlineMatchFromSetups(hostSetup, guestSetup){
   onlineLastPublishedKey = onlineStableKey();
   window.FulbitoOnline.publishRoomState(onlineRoomCode, onlineSeq, serializeMatchState());
 }
+// El rival se fue (cerro la sala o se salio): avisa y vuelve solo al menu en vez de
+// dejar al jugador mirando una partida congelada sin ninguna salida.
+function handleOnlineAbandon(){
+  if (onlineAbandoned) return;
+  onlineAbandoned = true;
+  if (onlineUnwatch){ onlineUnwatch(); onlineUnwatch = null; }
+  onlineRoomCode = null;
+  clearInterval(matchIntervalId);
+  flashMessage('&#128075; Tu rival se fue', 'La sala se cerro. Volviendo al menu...', 2500);
+  setTimeout(() => { const btn = document.getElementById('backToMenu'); if (btn) btn.click(); }, 2500);
+}
 function onOnlineRoomUpdate(room){
-  if (!room){
-    flashMessage('Sala cerrada', 'Tu rival se desconecto', 3000);
-    return;
-  }
+  if (!room){ handleOnlineAbandon(); return; }
+  if (onlineLocalTeam==='A' && !room.guestUid){ handleOnlineAbandon(); return; } // el invitado se salio
   if (!room.snapshot){
     // Todavia no arranco el partido: esperando a que las dos mitades del armado esten listas.
     if (onlineLocalTeam==='A' && room.hostSetup && room.guestSetup && !onlineMatchStarting){
@@ -2044,7 +2054,7 @@ function onOnlineRoomUpdate(room){
 function startOnlineSetup(room, isHost){
   onlineRoomCode = room.code;
   onlineLocalTeam = isHost ? 'A' : 'B';
-  onlineSeq = 0; onlineLastPublishedKey = null; onlineMatchStarting = false;
+  onlineSeq = 0; onlineLastPublishedKey = null; onlineMatchStarting = false; onlineAbandoned = false;
   state.mode = 'online';
   state.teamNames = {
     A: (room.hostName || 'ANFITRION').toUpperCase().slice(0,16),
