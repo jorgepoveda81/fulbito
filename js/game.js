@@ -1620,7 +1620,7 @@ function loop(now){
     updateBall(dt);
   }
 
-  if (state.mode==='vsAI') updateAI(dt);
+  if (state.mode==='vsAI'){ updateAI(dt); aiConsiderDefense(); }
   updateConfetti(dt);
   updateKickSparks(dt);
   updateShake(dt);
@@ -1788,6 +1788,33 @@ const AI_DIFFICULTY_PRESETS = {
 };
 function aiPreset(){ return AI_DIFFICULTY_PRESETS[state.aiDifficulty] || AI_DIFFICULTY_PRESETS.normal; }
 function aiRangeMs([min,max]){ return min + Math.random()*(max-min); }
+// Apunta al lado del arco mas lejos del arquero rival — el mismo dato que veria un humano,
+// su posicion siempre es visible. El ruido de cada dificultad decide que tan bien lo ejecuta:
+// Facil casi no lo aprovecha, Dificil si. Nunca pega justo al palo, apunta "hacia" el lado abierto.
+function aiOpenGoalSideY(){
+  const keeper = keeperOf('A');
+  if (!keeper) return H/2;
+  const topSpot = GOAL_TOP + 20, bottomSpot = GOAL_BOTTOM - 20;
+  const farSpot = Math.abs(topSpot - keeper.y) > Math.abs(bottomSpot - keeper.y) ? topSpot : bottomSpot;
+  return H/2 + (farSpot - H/2) * 0.75;
+}
+// Uso proactivo de los poderes propios (solo en Dificil, ver preset.usePowers): imita las
+// decisiones tacticas de un jugador con oficio. Nunca ve mas de lo que un humano veria.
+function aiConsiderOwnPowers(holder, isShot){
+  if (hasPower('B','escudo')) activatePower('B','escudo'); // preparacion defensiva temprana
+  if (hasPower('B','farmear') && state.passStreak.B>=2 && holder.team==='B') activatePower('B','farmear');
+  if (isShot){
+    if (hasPower('B','impulso')) activatePower('B','impulso');
+    if (hasPower('B','silencio')) activatePower('B','silencio'); // deja sin poderes al rival si recupera el balon
+  }
+}
+// Segundo bloqueo reactivo: si el primer intento de intercepcion de la IA fallo mientras el
+// humano tira, rearma un segundo intento — igual que haria un jugador atento al vuelo del balon.
+function aiConsiderDefense(){
+  if (state.mode !== 'vsAI' || state.turnTeam !== 'A' || state.phase !== 'flying') return;
+  if (!aiPreset().usePowers) return;
+  if (state.interceptUsed.B && hasPower('B','segundobloqueo')) activatePower('B','segundobloqueo');
+}
 // entre los companeros mas avanzados hacia el arco rival, elige uno con algo de variedad
 // (no siempre el mismo) en vez de puro azar entre todos — mejor lectura de la cancha sin ser perfecta
 function aiPickMate(mates){
@@ -1821,15 +1848,19 @@ function updateAI(dt){
     target = { x: mate.x, y: mate.y };
     isShot = false; chargeMs = aiRangeMs(preset.keeperPassMs);
   } else if ((holder.role==='fwd' || holder.isCaptain) && holder.x < preset.shotRangeX){
-    target = { x: 12, y: H/2 + (Math.random()*70-35) };
+    target = { x: 12, y: aiOpenGoalSideY() };
     isShot = true; chargeMs = aiRangeMs(preset.shotMs);
-    if (preset.usePowers && hasPower('B','impulso')) activatePower('B','impulso');
   } else {
     const mates = players.filter(p=>p.team==='B' && p!==holder && p.x < holder.x-20);
     const mate = mates.length ? (preset.bestMate ? aiPickMate(mates) : mates[Math.floor(Math.random()*mates.length)])
                                : players.find(p=>p.team==='B'&&p.isCaptain);
     target = { x: mate.x, y: mate.y };
     isShot = false; chargeMs = aiRangeMs(preset.passMs);
+  }
+  if (preset.usePowers){
+    aiConsiderOwnPowers(holder, isShot);
+    // si la carga que hace falta no entra en el tiempo que queda, se juega el Tiempo extra
+    if (hasPower('B','tiempo') && (chargeMs/1000 + 1) > state.turnTimeLeft) activatePower('B','tiempo');
   }
 
   // ruido en la puntaria: representa una decision menos afinada, no una mano mas torpe
