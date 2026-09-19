@@ -176,17 +176,19 @@ let ballAuraTime = new Map(); // acumula ms que el balon paso dentro del aura de
 // ============================================================================
 // SECCION 11 — Los 10 poderes
 // ============================================================================
+// icon/short: solo para el chip compacto del HUD durante el partido (ver renderPowerButtons).
+// name/desc siguen siendo lo que se ve completo en la pantalla de elegir poderes.
 const POWERS = [
-  { id:'tiempo',        name:'Tiempo extra',        desc:'+5s a este turno', scope:'own' },
-  { id:'impulso',       name:'Impulso',              desc:'+20% de fuerza al proximo disparo', scope:'own' },
-  { id:'farmear',       name:'Farmear aura',         desc:'Tras 2 pases seguidos, agranda tu aura 25%', scope:'own' },
-  { id:'planb',         name:'Plan B',                desc:'Cancela tu puntaria y vuelve a apuntar', scope:'own' },
-  { id:'segundobloqueo',name:'Segundo bloqueo',      desc:'Intento extra de intercepcion en el turno rival', scope:'rival' },
-  { id:'silencio',      name:'Silencio',              desc:'El rival no usa poderes en su proximo turno', scope:'own' },
-  { id:'escudo',        name:'Escudo de aura',       desc:'Te salva de un Silencio rival', scope:'both' },
-  { id:'pasocapitan',   name:'Paso del capitan',     desc:'Reposiciona al capitan una vez extra', scope:'own' },
-  { id:'revisionvar',   name:'Revision VAR',          desc:'Veras los datos exactos si hay VAR', scope:'both' },
-  { id:'recuperacion',  name:'Recuperacion rapida',  desc:'+5s cuando tu capitan recupera en zona vacia', scope:'passive' },
+  { id:'tiempo',        name:'Tiempo extra',        desc:'+5s a este turno', scope:'own', icon:'&#9201;&#65039;', short:'Tiempo' },
+  { id:'impulso',       name:'Impulso',              desc:'+20% de fuerza al proximo disparo', scope:'own', icon:'&#9889;', short:'Impulso' },
+  { id:'farmear',       name:'Farmear aura',         desc:'Tras 2 pases seguidos, agranda tu aura 25%', scope:'own', icon:'&#128293;', short:'Aura+' },
+  { id:'planb',         name:'Plan B',                desc:'Cancela tu puntaria y vuelve a apuntar', scope:'own', icon:'&#128260;', short:'Plan B' },
+  { id:'segundobloqueo',name:'Segundo bloqueo',      desc:'Intento extra de intercepcion en el turno rival', scope:'rival', icon:'&#9995;', short:'Bloqueo' },
+  { id:'silencio',      name:'Silencio',              desc:'El rival no usa poderes en su proximo turno', scope:'own', icon:'&#128263;', short:'Silencio' },
+  { id:'escudo',        name:'Escudo de aura',       desc:'Te salva de un Silencio rival', scope:'both', icon:'&#128737;&#65039;', short:'Escudo' },
+  { id:'pasocapitan',   name:'Paso del capitan',     desc:'Reposiciona al capitan una vez extra', scope:'own', icon:'&#128095;', short:'Capitan' },
+  { id:'revisionvar',   name:'Revision VAR',          desc:'Veras los datos exactos si hay VAR', scope:'both', icon:'&#128269;', short:'VAR' },
+  { id:'recuperacion',  name:'Recuperacion rapida',  desc:'+5s cuando tu capitan recupera en zona vacia', scope:'passive', icon:'&#8987;', short:'Recup.' },
 ];
 function powerById(id){ return POWERS.find(p=>p.id===id); }
 
@@ -382,6 +384,12 @@ function maybeShowTutorial(next){
     next();
   };
 }
+// Boton "?" del topbar: reabre el mismo tutorial en cualquier momento del partido,
+// sin marcar nada como visto ni tocar el flujo de maybeShowTutorial.
+document.getElementById('helpBtn').onclick = () => {
+  tutorialOverlay.classList.remove('hidden');
+  tutorialContinue.onclick = () => tutorialOverlay.classList.add('hidden');
+};
 
 let pickingTeam = 'A';
 let tempPick = [];
@@ -619,6 +627,8 @@ canvas.addEventListener('touchend', e=>{ if (humanInputAllowed()) pointerUp(); e
 let powerButtonEls = [];
 function renderPowerButtons(){
   powerButtonEls = [];
+  // En 1 jugador vs PC, el dock del rival es solo la compu: no hace falta mostrarselo al humano.
+  document.getElementById('powersB').classList.toggle('hidden', state.mode==='vsAI');
   ['A','B'].forEach(team => {
     const row = document.getElementById(team==='A' ? 'powerRowA' : 'powerRowB');
     row.innerHTML = '';
@@ -629,7 +639,8 @@ function renderPowerButtons(){
       btn.type = 'button';
       btn.className = 'power-btn' + (isPassive ? ' power-passive' : '');
       btn.dataset.team = team; btn.dataset.power = id;
-      btn.innerHTML = `${p.name}<span class="desc">${p.desc}${isPassive ? ' (automatico)' : ''}</span>`;
+      btn.title = `${p.name} — ${p.desc}${isPassive ? ' (automatico)' : ''}`;
+      btn.innerHTML = `<span class="power-btn-icon">${p.icon}</span><span class="power-btn-label">${p.short}</span>`;
       if (!isPassive) btn.onclick = () => activatePower(team, id);
       row.appendChild(btn);
       powerButtonEls.push(btn);

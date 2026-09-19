@@ -42,27 +42,31 @@
 </div>
 
 <div id="gameRoot" class="hidden">
-<button class="back-to-menu" id="backToMenu">&#8592; Menu</button>
-
-<div class="orientation-hint" id="orientationHint">Gira el celular &#8635; para jugar mejor (cancha horizontal)</div>
+<div class="game-topbar">
+  <button class="back-to-menu" id="backToMenu">&#8592; Menu</button>
+  <div class="orientation-hint" id="orientationHint">Gira el celular &#8635; para una cancha mas grande</div>
+  <button class="help-btn" id="helpBtn" type="button" aria-label="Como se juega">?</button>
+</div>
 
 <div class="hud">
-  <div class="score">
-    <span class="teamtag tagA" id="tagAName">EQUIPO A</span>
-    <span id="scoreA">0</span>
-    <span style="color:var(--sub);font-size:16px;">-</span>
-    <span id="scoreB">0</span>
-    <span class="teamtag tagB" id="tagBName">EQUIPO B</span>
+  <div class="hud-row">
+    <div class="hud-team">
+      <span class="teamtag tagA" id="tagAName">EQUIPO A</span>
+      <span class="hud-score" id="scoreA">0</span>
+    </div>
+    <div class="hud-time" id="matchtime">3:00</div>
+    <div class="hud-team hud-team-right">
+      <span class="hud-score" id="scoreB">0</span>
+      <span class="teamtag tagB" id="tagBName">EQUIPO B</span>
+    </div>
   </div>
-  <div class="mid-hud">
-    <div class="matchtime" id="matchtime">3:00</div>
-    <div class="whoseturn"><span class="dot" id="turnDot" style="background:var(--teamA);"></span><span id="turnLabel">Turno Equipo A</span></div>
-    <div class="turnbar-wrap"><div class="turnbar" id="turnbar"></div></div>
+  <div class="hud-turn">
+    <span class="dot" id="turnDot" style="background:var(--teamA);"></span>
+    <span id="turnLabel">Turno Equipo A</span>
+    <span class="hud-sep">&middot;</span>
+    <span id="captainInfo" class="hud-cap">-</span>
   </div>
-  <div style="text-align:right;">
-    <div class="turnlabel">Con el balon</div>
-    <div id="captainInfo" style="font-size:11px;color:var(--sub);">-</div>
-  </div>
+  <div class="turnbar-wrap"><div class="turnbar" id="turnbar"></div></div>
 </div>
 
 <div class="formation-bar hidden" id="formationBar">
@@ -124,11 +128,17 @@
     <div class="power-select-box">
       <h2>&#127919; Como se juega</h2>
       <ul class="tutorial-list">
+        <li>Antes de arrancar, cada equipo elige 2 poderes en secreto, arrastra a sus 5 jugadores de campo (borde punteado) a su mitad de la cancha respetando el maximo por zona, y esconde su zona fantasma.</li>
         <li>El aura dorada alrededor de cada jugador es su zona de accion.</li>
-        <li>Apunta hacia donde quieres mandar el balón, mantén presionado para cargar fuerza y suelta para tirar o pasar.</li>
-        <li>Cuando el balon se frena, se queda con el la aura donde cayo. Si cae entre dos auras muy cerca, decide el VAR.</li>
-        <li>Cada equipo elige 2 poderes secretos antes de arrancar, y esconde una zona fantasma en la cancha.</li>
+        <li>Apunta hacia donde quieres mandar el balón, mantén presionado para cargar fuerza y suelta para tirar o pasar. Cargar poco = pase suave, cargar mucho = tiro fuerte.</li>
+        <li>Cuando el balon se frena, se queda con la figura de esa aura. Si cae entre dos auras muy cerca, decide el VAR.</li>
       </ul>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--teamA);"></span> Equipo A</span>
+        <span><span class="sw" style="background:var(--teamB);"></span> Equipo B</span>
+        <span><span class="sw" style="background:var(--gold);"></span> Capitan con el balon</span>
+        <span><span class="sw" style="background:#fff;"></span> Balon</span>
+      </div>
       <button class="reset-btn" id="tutorialContinue">Entendido, &iexcl;a jugar!</button>
     </div>
   </div>
@@ -141,11 +151,9 @@
 
 <div class="controls">
   <div class="powers powers-a" id="powersA">
-    <h3><span class="powers-dot" style="background:var(--teamA);"></span>Poderes de Equipo A</h3>
     <div class="power-row" id="powerRowA"></div>
   </div>
   <div class="powers powers-b" id="powersB">
-    <h3><span class="powers-dot" style="background:var(--teamB);"></span>Poderes de Equipo B</h3>
     <div class="power-row" id="powerRowB"></div>
   </div>
 </div>
@@ -187,17 +195,6 @@
   </div>
   <button class="reset-btn" id="btnReset">&#128260; Reiniciar partido (elegir poderes de nuevo)</button>
 </details>
-
-<div class="howto">
-  <b>Antes de arrancar:</b> cada equipo elige 2 poderes en secreto, despues arrastra a sus 5 jugadores de campo (los del borde punteado) a cualquier parte de la cancha respetando el maximo de jugadores por zona (baja/media/alta segun que tan cerca esten del arco rival), y por ultimo esconde su zona fantasma tocando donde quiera. El arquero y el capitan ya tienen su lugar fijo por las reglas.<br><br>
-  <b>Como se juega (para probar entre dos personas en la misma pantalla):</b> el jugador que tiene el balon se marca con un anillo dorado. Apunta con el mouse o el dedo hacia donde quieres mandar el balon, mantén presionado para cargar la fuerza y suelta para pasar o tirar. Cargar poco = pase suave. Cargar mucho = tiro fuerte. Cuando el balon se detiene, el juego decide quien se queda con la posesion segun en que aura cayo, igual que en las reglas del documento.
-  <div class="legend">
-    <span><span class="sw" style="background:var(--teamA);"></span> Equipo A (izquierda)</span>
-    <span><span class="sw" style="background:var(--teamB);"></span> Equipo B (derecha)</span>
-    <span><span class="sw" style="background:var(--gold);"></span> Capitan con el balon</span>
-    <span><span class="sw" style="background:#fff;"></span> Balon</span>
-  </div>
-</div>
 
 </div><!-- /gameRoot -->
 

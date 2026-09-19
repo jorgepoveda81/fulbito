@@ -85,6 +85,7 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 - Modo 1 jugador contra la PC, con 3 niveles de dificultad (Facil/Normal/Dificil) elegibles al armar el partido.
 - Nombres de equipo personalizables, sonido, vibracion en celular. Cada gol (en juego abierto o de penal) suma confeti, sacudida de camara, un golpe de zoom, un flash de color con el color del equipo y la red vibrando del lado donde entro el balon; cada patada larga suelta chispas cortas en el punto de impacto.
 - Menus, HUD del partido y panel de poderes con estilo de juego (degradados, sombras, botones con efecto de presion 3D) en vez de paneles planos tipo formulario.
+- Pantalla del partido rehecha: HUD de una sola fila compacta, poderes como chips con icono (no tarjetas con la descripcion completa siempre visible — se ve al tocar o mantener presionado), y el modo horizontal corregido de raiz (la cancha ahora escala por el alto disponible, antes se desbordaba o quedaba cortada). En 1 jugador vs PC no se muestra el dock de poderes del rival. El texto de ayuda pasa a un boton "?" en vez de estar siempre visible.
 - Icono y logo propios (un aura dorada con la pelota, dibujado, no un emoji suelto) en el favicon, el icono instalable y el encabezado.
 - Patron de camiseta (solida/rayas/franja/aro) elegible en Mi Equipo junto al color, puramente cosmetico — nunca cambia una habilidad.
 - Tutorial de "Como se juega" la primera vez que alguien toca Jugar en ese celular (nunca mas despues, salvo borrar los datos del sitio).
