@@ -1874,6 +1874,67 @@ function updateAI(dt){
   aiState.releaseAt = performance.now() + (isShot ? Math.min(chargeMs, settings.chargeMs) : chargeMs);
 }
 
+// ============================================================================
+// Modo online (partido por turnos entre dos celulares, ver js/online-repo.js)
+// El partido en si sigue siendo el mismo motor de siempre: cada dispositivo corre
+// su propia fisica normalmente. Lo unico que cambia es que, en vez de pasar el
+// turno al otro jugador en el mismo celular (hotseat), se guarda el estado
+// completo en Firestore en cada punto de decision (aiming/formacion/penal) y el
+// otro celular lo recibe y sigue desde ahi. Nunca se sincroniza el balon en
+// pleno vuelo: eso evita tener que mandar decenas de escrituras por segundo.
+// ============================================================================
+function serializeMatchState(){
+  return {
+    scoreA: state.scoreA, scoreB: state.scoreB, matchTimeLeft: state.matchTimeLeft,
+    phase: state.phase, turnTeam: state.turnTeam,
+    formingTeam: state.formingTeam, formationStep: state.formationStep,
+    teamNames: state.teamNames,
+    selectedPowers: state.selectedPowers, usedPowers: state.usedPowers,
+    impulsoActive: state.impulsoActive, silencedNextTurn: state.silencedNextTurn,
+    shieldActive: state.shieldActive, passStreak: state.passStreak,
+    revisionVarPending: state.revisionVarPending, ghostZones: state.ghostZones,
+    formation: state.formation,
+    penalty: state.penalty ? { ...state.penalty, players: state.penalty.players.map(statKey) } : null,
+    pendingSinglePenalty: state.pendingSinglePenalty,
+    holderKey: state.holder ? statKey(state.holder) : null,
+    lastShooterKey: lastShooterRef ? statKey(lastShooterRef) : null,
+    rosterOverrideA, rosterOverrideB, teamColors, teamKits, matchStats,
+    players: players.map(p => ({ x:p.x, y:p.y, skills:p.skills, displayName:p.displayName||null, ownedId:p.ownedId||null })),
+    ball: { x: ball.x, y: ball.y },
+  };
+}
+function applyMatchState(s){
+  rosterOverrideA = s.rosterOverrideA; rosterOverrideB = s.rosterOverrideB;
+  state.formation = s.formation;
+  resetPlayers(); // reconstruye con el mismo roster+formacion: mismo orden, mismos jugadores
+  players.forEach((p,i) => {
+    const sp = s.players[i];
+    if (!sp) return;
+    p.x = sp.x; p.y = sp.y;
+    if (sp.skills) p.skills = sp.skills;
+    if (sp.displayName) p.displayName = sp.displayName;
+    if (sp.ownedId) p.ownedId = sp.ownedId;
+  });
+  teamColors = s.teamColors; teamKits = s.teamKits;
+  ball.x = s.ball.x; ball.y = s.ball.y; ball.vx = 0; ball.vy = 0; ball.flying = false;
+  Object.assign(state, {
+    scoreA:s.scoreA, scoreB:s.scoreB, matchTimeLeft:s.matchTimeLeft, phase:s.phase, turnTeam:s.turnTeam,
+    formingTeam:s.formingTeam, formationStep:s.formationStep, teamNames:s.teamNames,
+    selectedPowers:s.selectedPowers, usedPowers:s.usedPowers, impulsoActive:s.impulsoActive,
+    silencedNextTurn:s.silencedNextTurn, shieldActive:s.shieldActive, passStreak:s.passStreak,
+    revisionVarPending:s.revisionVarPending, ghostZones:s.ghostZones,
+    pendingSinglePenalty:s.pendingSinglePenalty,
+  });
+  state.penalty = s.penalty ? { ...s.penalty, players: s.penalty.players.map(k => players.find(p=>statKey(p)===k)) } : null;
+  matchStats = s.matchStats || {};
+  lastShooterRef = s.lastShooterKey ? players.find(p=>statKey(p)===s.lastShooterKey) : null;
+  state.holder = s.holderKey ? players.find(p=>statKey(p)===s.holderKey) : null;
+  document.documentElement.style.setProperty('--teamA', teamColors.A);
+  document.documentElement.style.setProperty('--teamB', teamColors.B);
+  updateScoreboard();
+  renderPowerButtons();
+}
+
 window.FulbitoGame = {
   // roster: arreglo de 7 {skills, name} (arquero, def, def, mid, mid, fwd, capitan) o null para volver al preset por defecto
   setPlayerRoster(roster){ rosterOverrideA = roster; },
@@ -1892,6 +1953,9 @@ window.FulbitoGame = {
     rosterOverrideB = null; teamColorFromLookupB = null; nameBStatus.textContent = '';
     mainMenuOverlay.classList.remove('hidden');
   },
+  // Usados por el modo online (ver js/online-repo.js) para guardar/retomar el partido.
+  serializeMatchState,
+  applyMatchState,
 };
 
 resetPlayers();
