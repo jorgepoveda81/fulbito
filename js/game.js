@@ -1030,6 +1030,7 @@ function startTurn(team, holder){
   state.turnTimeLeft = settings.turnSeconds;
   state.phase = 'aiming';
   updatePowerButtons();
+  publishOnlineHandoff();
 }
 
 function handleTurnTimeout(){
@@ -1053,6 +1054,7 @@ function scoreGoal(team){
   if (team==='A') state.scoreA++; else state.scoreB++;
   if (lastShooterRef && lastShooterRef.team===team) statFor(lastShooterRef).goals++;
   updateScoreboard();
+  publishOnlineHandoff(); // el marcador nuevo llega ya, sin esperar a que se reanude el juego
   flashMessage('&#9917; ¡GOOOOL!', `${teamName(team)} marca`, 1700, true);
   spawnConfetti(team==='A' ? W-40 : 40, H/2);
   spawnConfetti(W/2, H/2);
@@ -1088,6 +1090,7 @@ function resolveSinglePenaltyGoal(team){
     if (team==='A') state.scoreA++; else state.scoreB++;
     if (lastShooterRef && lastShooterRef.team===team) statFor(lastShooterRef).goals++;
     updateScoreboard();
+    publishOnlineHandoff();
     flashMessage('&#9917; ¡GOL de penal!', '', 1500, true);
     spawnConfetti(ball.x, ball.y);
     triggerShake(9);
@@ -1113,6 +1116,10 @@ function startPenalties(){
   // aca, el numero queda clavado en 0:00 y parece que el juego se colgo aunque siga en penales.
   document.getElementById('matchtime').textContent = 'PENALES';
   flashMessage('&#127877; Tanda de penales', 'Empate al final de los 3 minutos', 1800);
+  // Solo el anfitrion tiene el reloj del partido corriendo (ver startMatchClock): si el
+  // tiempo se acaba mientras le tocaba jugar al invitado, sin este aviso el invitado nunca
+  // se enteraria de que arrancaron los penales.
+  publishOnlineHandoff();
   setTimeout(setupPenaltyKick, 1500);
 }
 function setupPenaltyKick(forTeamArg, defTeamArg, mode){
@@ -1142,10 +1149,12 @@ function setupPenaltyKick(forTeamArg, defTeamArg, mode){
   const leftText = state.penalty.mode==='shootout' ? ` &middot; quedan ${state.penalty.kicksLeft[kicking]}` : '';
   const bonusText = mode === 'single' ? ' &middot; +5s por descubrirla' : '';
   flashMessage(`Penal &mdash; ${teamName(kicking)}`, `Patea el capitan${leftText}${bonusText}`, 1200);
+  publishOnlineHandoff();
 }
 function registerPenaltyGoal(team){
   const p = state.penalty;
   if (team==='A') p.scoreA++; else p.scoreB++;
+  publishOnlineHandoff();
   flashMessage('&#9917; ¡GOL!', `${teamName(team)} convierte`, 900, true);
   spawnConfetti(ball.x, ball.y);
   triggerShake(9);
@@ -1633,11 +1642,18 @@ function loop(now){
   lastT = now;
 
   if (state.phase==='aiming'){
-    state.turnTimeLeft -= dt;
-    if (state.turnTimeLeft <= 0){
-      state.turnTimeLeft = 0;
-      if (state.penalty){ /* los penales no pierden turno por tiempo */ }
-      else handleTurnTimeout();
+    // En modo online, el celular que esta esperando (no es su turno) nunca debe descontar
+    // ni vencer su propio reloj de turno: nunca corrio startTurn() para este turno, asi que
+    // su turnTimeLeft es un valor viejo sin relacion con el tiempo real que lleva pensando
+    // el rival — si se dejara correr, se robaria el turno solo, sin que el rival haya hecho
+    // nada, y encima publicaria ese estado inventado (ver publishOnlineHandoff).
+    if (state.mode !== 'online' || onlineIsLocalActorTurn()){
+      state.turnTimeLeft -= dt;
+      if (state.turnTimeLeft <= 0){
+        state.turnTimeLeft = 0;
+        if (state.penalty){ /* los penales no pierden turno por tiempo */ }
+        else handleTurnTimeout();
+      }
     }
     if (state.holder && !aim.active){ ball.x = state.holder.x; ball.y = state.holder.y; }
   } else if (state.phase==='flying'){
@@ -1718,17 +1734,8 @@ function startMatch(){
   audio.whistle();
   setTimeout(()=>{
     coinFlip = null;
-    startTurn(startTeam, keeperOf(startTeam));
+    startTurn(startTeam, keeperOf(startTeam)); // publica el arranque real (ver publishOnlineHandoff), no a mitad del sorteo
     startMatchClock();
-    if (state.mode === 'online' && onlineLocalTeam === 'A' && onlineRoomCode){
-      // Aviso obligatorio de que el partido arranco, sin importar a quien le toca el
-      // primer turno (a diferencia de maybePublishOnline, que solo publica en mi turno):
-      // si public antes, mientras la moneda seguia en el aire, el invitado quedaria
-      // congelado en el sorteo para siempre cuando le tocara arrancar a el.
-      onlineSeq += 1;
-      onlineLastPublishedKey = onlineStableKey();
-      window.FulbitoOnline.publishRoomState(onlineRoomCode, onlineSeq, serializeMatchState());
-    }
   }, 1500);
 }
 
@@ -1992,6 +1999,22 @@ function onlineStableKey(){
 function onlineIsLocalActorTurn(){
   const actor = state.phase==='formation' ? state.formingTeam : state.turnTeam;
   return actor === onlineLocalTeam;
+}
+// A diferencia de maybePublishOnline (que solo publica si el nuevo estado sigue siendo mi
+// turno, para no escribir de mas por el simple paso del reloj), esta SIEMPRE publica sin
+// importar de quien sea el turno que acaba de arrancar. Se llama justo despues de startTurn(),
+// setupPenaltyKick() y las otras transiciones a un nuevo punto de decision: todas esas
+// funciones solo se ejecutan como consecuencia directa de una jugada que paso en ESTE
+// celular (el celular que esta esperando nunca corre la fisica real, asi que nunca llega
+// solo a estas funciones), asi que soy yo quien tiene que avisar — sea o no mi turno el que
+// acaba de empezar. Sin esto, cualquier jugada que le pasa el turno al OTRO equipo (VAR de
+// posesion, zona vacia, reinicio tras gol, tanda de penales...) dejaria al rival esperando
+// un aviso que maybePublishOnline nunca manda, porque para cuando corre ya no es mi turno.
+function publishOnlineHandoff(){
+  if (state.mode !== 'online' || !onlineRoomCode || !onlineMatchLive) return;
+  onlineSeq += 1;
+  onlineLastPublishedKey = onlineStableKey();
+  window.FulbitoOnline.publishRoomState(onlineRoomCode, onlineSeq, serializeMatchState());
 }
 // Llamado cada frame desde loop(): publica el estado en Firestore solo cuando el partido
 // llega a un punto de decision NUEVO (apuntando/formacion/penal/gol/fin) y le toca actuar
