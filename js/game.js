@@ -1720,6 +1720,15 @@ function startMatch(){
     coinFlip = null;
     startTurn(startTeam, keeperOf(startTeam));
     startMatchClock();
+    if (state.mode === 'online' && onlineLocalTeam === 'A' && onlineRoomCode){
+      // Aviso obligatorio de que el partido arranco, sin importar a quien le toca el
+      // primer turno (a diferencia de maybePublishOnline, que solo publica en mi turno):
+      // si public antes, mientras la moneda seguia en el aire, el invitado quedaria
+      // congelado en el sorteo para siempre cuando le tocara arrancar a el.
+      onlineSeq += 1;
+      onlineLastPublishedKey = onlineStableKey();
+      window.FulbitoOnline.publishRoomState(onlineRoomCode, onlineSeq, serializeMatchState());
+    }
   }, 1500);
 }
 
@@ -1968,6 +1977,12 @@ let onlineSeq = 0;
 let onlineLastPublishedKey = null;
 let onlineMatchStarting = false;
 let onlineAbandoned = false; // true una vez que ya avisamos y estamos volviendo al menu
+// true recien cuando el partido compartido arranco de verdad (beginOnlineMatchFromSetups
+// del lado del anfitrion, o el primer snapshot recibido del lado del invitado). Antes de
+// eso, la fase 'formation' es cada quien armando su equipo EN PRIVADO en su propio celular
+// (ver beginFormation) — publicarla mandaria un estado a medio armar y romperia la señal de
+// "los dos ya estan listos" que espera onOnlineRoomUpdate.
+let onlineMatchLive = false;
 
 function onlineStableKey(){
   return [state.phase, state.turnTeam, state.formingTeam, state.formationStep,
@@ -1983,7 +1998,7 @@ function onlineIsLocalActorTurn(){
 // a este celular — nunca a mitad de vuelo del balon, para no mandar decenas de escrituras
 // por segundo.
 function maybePublishOnline(){
-  if (state.mode !== 'online' || !onlineRoomCode) return;
+  if (state.mode !== 'online' || !onlineRoomCode || !onlineMatchLive) return;
   const stable = state.phase==='aiming' || state.phase==='formation' || state.phase==='penaltySetup'
               || state.phase==='goalPause' || state.phase==='ended';
   if (!stable) return;
@@ -2009,6 +2024,7 @@ function publishOnlineSetup(){
 // (mismo startMatch() de siempre) y publica el primer turno para que el invitado lo reciba.
 function beginOnlineMatchFromSetups(hostSetup, guestSetup){
   msgOverlay.classList.remove('show'); // saca el "esperando a tu rival"
+  onlineMatchLive = true;
   state.selectedPowers = { A: hostSetup.selectedPowers, B: guestSetup.selectedPowers };
   state.formation = { A: hostSetup.formation, B: guestSetup.formation };
   resetPlayers();
@@ -2016,10 +2032,7 @@ function beginOnlineMatchFromSetups(hostSetup, guestSetup){
     A: { x: hostSetup.ghostZone.x, y: hostSetup.ghostZone.y, revealed:false, team:'A' },
     B: { x: guestSetup.ghostZone.x, y: guestSetup.ghostZone.y, revealed:false, team:'B' },
   };
-  startMatch();
-  onlineSeq = 1;
-  onlineLastPublishedKey = onlineStableKey();
-  window.FulbitoOnline.publishRoomState(onlineRoomCode, onlineSeq, serializeMatchState());
+  startMatch(); // publica el estado real ya arrancado (ver el setTimeout de startMatch) en vez de a mitad del sorteo
 }
 // El rival se fue (cerro la sala o se salio): avisa y vuelve solo al menu en vez de
 // dejar al jugador mirando una partida congelada sin ninguna salida.
@@ -2045,6 +2058,7 @@ function onOnlineRoomUpdate(room){
   }
   if (room.seq <= onlineSeq) return; // es mi propio ultimo envio, o algo viejo
   onlineSeq = room.seq;
+  onlineMatchLive = true;
   applyMatchState(room.snapshot);
   onlineLastPublishedKey = onlineStableKey(); // no volver a publicar lo que acabo de recibir
   msgOverlay.classList.remove('show'); // saca el "esperando a tu rival" si seguia puesto
@@ -2054,7 +2068,7 @@ function onOnlineRoomUpdate(room){
 function startOnlineSetup(room, isHost){
   onlineRoomCode = room.code;
   onlineLocalTeam = isHost ? 'A' : 'B';
-  onlineSeq = 0; onlineLastPublishedKey = null; onlineMatchStarting = false; onlineAbandoned = false;
+  onlineSeq = 0; onlineLastPublishedKey = null; onlineMatchStarting = false; onlineAbandoned = false; onlineMatchLive = false;
   state.mode = 'online';
   state.teamNames = {
     A: (room.hostName || 'ANFITRION').toUpperCase().slice(0,16),
@@ -2067,6 +2081,7 @@ function startOnlineSetup(room, isHost){
   document.querySelector('.app-hero').classList.add('hidden');
   document.getElementById('appShell').classList.add('hidden');
   document.getElementById('gameRoot').classList.remove('hidden');
+  mainMenuOverlay.classList.add('hidden'); // el modo online salta esta pantalla: si queda visible tapa la formacion
   if (onlineUnwatch) onlineUnwatch();
   onlineUnwatch = window.FulbitoOnline.watchRoom(onlineRoomCode, onOnlineRoomUpdate);
   maybeShowTutorial(() => {
