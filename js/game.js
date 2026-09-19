@@ -54,6 +54,9 @@ const STOP_EPS = 6; // velocidad minima antes de considerar el balon detenido
 
 // Colores de camiseta por equipo (se pueden personalizar desde Mi Equipo, ver setTeamColors)
 let teamColors = { A:'#2f6fe0', B:'#e0432f' };
+// Patron de camiseta por equipo: 'solid' | 'stripes' | 'sash' | 'hoop' (ver setTeamKits
+// y TEAM_KIT_PATTERNS en js/store-data.js). Puramente visual, nunca toca habilidades.
+let teamKits = { A:'solid', B:'solid' };
 function hexToRgba(hex, alpha){
   const h = hex.replace('#','');
   const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
@@ -1484,6 +1487,33 @@ function drawAuras(){
     ctx.globalAlpha = 1;
   }
 }
+// Dibuja la camiseta de un jugador (solida/rayas/franja/aro) recortada al circulo,
+// sin cambiar su tamano de colision ni ninguna habilidad — ver TEAM_KIT_PATTERNS.
+function fillPlayerCircle(p){
+  const color = teamColors[p.team];
+  const kit = teamKits[p.team] || 'solid';
+  const r = p.r;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2); ctx.clip();
+  ctx.fillStyle = (kit === 'hoop') ? '#ffffff' : color;
+  ctx.fillRect(p.x-r, p.y-r, r*2, r*2);
+  if (kit === 'stripes'){
+    ctx.fillStyle = '#ffffff';
+    const stripeW = Math.max(2, r*0.34);
+    for (let sx = p.x-r; sx < p.x+r; sx += stripeW*2) ctx.fillRect(sx, p.y-r, stripeW, r*2);
+  } else if (kit === 'sash'){
+    ctx.save();
+    ctx.translate(p.x, p.y); ctx.rotate(-0.5);
+    ctx.fillStyle = '#ffc94d';
+    ctx.fillRect(-r*1.5, -r*0.26, r*3, r*0.52);
+    ctx.restore();
+  } else if (kit === 'hoop'){
+    ctx.lineWidth = r*0.42;
+    ctx.strokeStyle = color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, r - ctx.lineWidth/2, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.restore();
+}
 function drawPlayers(){
   const active = getActivePlayers();
   for (const p of active){
@@ -1494,12 +1524,11 @@ function drawPlayers(){
     ctx.ellipse(p.x, p.y+p.r*0.6, p.r*0.95, p.r*0.4, 0, 0, Math.PI*2);
     ctx.fillStyle = 'rgba(0,0,0,0.28)';
     ctx.fill();
+    if (p.isCaptain){ ctx.shadowColor = teamColors[p.team]; ctx.shadowBlur = 8; }
+    fillPlayerCircle(p);
+    ctx.shadowBlur = 0;
     ctx.beginPath();
     ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fillStyle = teamColors[p.team];
-    if (p.isCaptain){ ctx.shadowColor = teamColors[p.team]; ctx.shadowBlur = 8; }
-    ctx.fill();
-    ctx.shadowBlur = 0;
     ctx.lineWidth = p.isKeeper ? 3 : 2;
     ctx.strokeStyle = '#0b0e10';
     ctx.stroke();
@@ -1710,6 +1739,7 @@ nameBInput.addEventListener('blur', async () => {
     teamColorFromLookupB = found.color;
     window.FulbitoGame.setTeamColors({ B: found.color });
   }
+  if (found.kit) window.FulbitoGame.setTeamKits({ B: found.kit });
   nameBStatus.textContent = found.roster
     ? `✓ Usando el equipo de ${found.username}`
     : `✓ Cuenta encontrada, pero todavia no armo su equipo en Mi Equipo`;
@@ -1811,6 +1841,10 @@ window.FulbitoGame = {
     teamColors = { ...teamColors, ...(colors||{}) };
     document.documentElement.style.setProperty('--teamA', teamColors.A);
     document.documentElement.style.setProperty('--teamB', teamColors.B);
+  },
+  // kits: { A: 'solid'|'stripes'|'sash'|'hoop', B: ... } — cualquiera de los dos puede omitirse
+  setTeamKits(kits){
+    teamKits = { ...teamKits, ...(kits||{}) };
   },
   showModeMenu(){
     rosterOverrideB = null; teamColorFromLookupB = null; nameBStatus.textContent = '';

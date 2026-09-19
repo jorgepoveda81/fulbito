@@ -15,6 +15,15 @@ export const TEAM_COLOR_PALETTE = [
   '#ff8c2f', '#2fd0c0', '#ff4fa0', '#ffd23f',
 ];
 
+// Patron de la camiseta: puramente visual, se dibuja sobre el mismo circulo de
+// siempre (ver fillPlayerCircle en js/game.js). Nunca cambia una habilidad.
+export const TEAM_KIT_PATTERNS = [
+  { id: 'solid', name: 'Solida' },
+  { id: 'stripes', name: 'Rayas' },
+  { id: 'sash', name: 'Franja' },
+  { id: 'hoop', name: 'Aro' },
+];
+
 export function sumSkills(skills){
   return Object.values(skills).reduce((a, b) => a + (Number(b) || 0), 0);
 }

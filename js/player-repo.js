@@ -74,7 +74,7 @@ export async function lookupPublicAccount(username){
   const profile = snap.docs[0].data();
 
   const teamSnap = await fsMod.getDoc(fsMod.doc(db, 'teams', uid));
-  if (!teamSnap.exists()) return { username: profile.username, color: profile.color||null, roster: null };
+  if (!teamSnap.exists()) return { username: profile.username, color: profile.color||null, kit: profile.kit||null, roster: null };
 
   const order = ['keeper','def1','def2','mid1','mid2','fwd','captain'];
   const roster = teamSnap.data().roster || {};
@@ -85,6 +85,7 @@ export async function lookupPublicAccount(username){
   return {
     username: profile.username,
     color: profile.color || null,
+    kit: profile.kit || null,
     roster: rosterOverride.every(Boolean) ? rosterOverride : null,
   };
 }

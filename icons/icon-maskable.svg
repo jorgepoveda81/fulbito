@@ -2,19 +2,15 @@
   <defs>
     <radialGradient id="bg" cx="35%" cy="30%" r="80%">
       <stop offset="0%" stop-color="#2a9d5c"/>
-      <stop offset="100%" stop-color="#155c37"/>
+      <stop offset="100%" stop-color="#133d24"/>
     </radialGradient>
   </defs>
   <!-- Fondo a sangre completa (sin bordes redondeados propios): el sistema operativo
        recorta esta forma segun su propia mascara (circulo, squircle, etc). El contenido
        queda dentro del circulo central del 80% para que ningun recorte se lo coma. -->
   <rect width="192" height="192" fill="url(#bg)"/>
-  <circle cx="96" cy="96" r="44" fill="none" stroke="#eef7f0" stroke-width="3" opacity="0.85"/>
-  <circle cx="96" cy="96" r="24" fill="#ffffff"/>
-  <g fill="#141b1e">
-    <polygon points="96,82 107,90 103,103 89,103 85,90"/>
-    <polygon points="96,68 96,82 85,90 76,81 82,70"/>
-    <polygon points="96,68 96,82 107,90 116,81 110,70"/>
-  </g>
-  <circle cx="96" cy="96" r="24" fill="none" stroke="#141b1e" stroke-width="1.5"/>
+  <circle cx="96" cy="96" r="70" fill="none" stroke="#ffc94d" stroke-width="5" opacity="0.55"/>
+  <path d="M96 34 A62 62 0 0 1 158 96" fill="none" stroke="#ffc94d" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="96" cy="96" r="26" fill="#f5f5f0" stroke="#12121a" stroke-width="4"/>
+  <polygon points="96,79 113,93 106,113 86,113 79,93" fill="#12121a"/>
 </svg>

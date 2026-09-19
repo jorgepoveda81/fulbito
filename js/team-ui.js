@@ -1,8 +1,8 @@
 // Pantalla "Mi Equipo": elegir que jugador de tu coleccion va en cada puesto.
-import { getCurrentUser, onAuthChange, setUsername, setColor, getAuthStatus } from './auth.js';
+import { getCurrentUser, onAuthChange, setUsername, setColor, setKit, getAuthStatus } from './auth.js';
 import { listOwnedPlayers, getTeam, saveTeam, grantStarterRosterIfEmpty } from './player-repo.js';
 import { renderPlayerCreator } from './player-creator.js';
-import { TEAM_COLOR_PALETTE } from './store-data.js';
+import { TEAM_COLOR_PALETTE, TEAM_KIT_PATTERNS } from './store-data.js';
 
 const SLOTS = [
   { key: 'keeper', label: 'Arquero', type: 'keeper' },
@@ -42,6 +42,10 @@ async function renderTeamScreen(container){
       <div class="color-swatches" id="colorSwatches">
         ${TEAM_COLOR_PALETTE.map(c => `<button class="color-swatch ${c===(user.color||'#2f6fe0')?'selected':''}" style="background:${c}" data-color="${c}" aria-label="${c}"></button>`).join('')}
       </div>
+      <label style="margin-top:12px;">Patron de camiseta</label>
+      <div class="kit-swatches" id="kitSwatches">
+        ${TEAM_KIT_PATTERNS.map(k => `<button class="kit-swatch ${k.id===(user.kit||'solid')?'selected':''}" style="background:${kitPreviewBackground(k.id, user.color||'#2f6fe0')}" data-kit="${k.id}" aria-label="${k.name}" title="${k.name}"></button>`).join('')}
+      </div>
     </div>
     <div class="coins-badge">&#129689; ${user.coins||0} monedas &middot; ${user.wins||0}V ${user.draws||0}E ${user.losses||0}D</div>
     <div class="roster-card">
@@ -63,6 +67,13 @@ async function renderTeamScreen(container){
       container.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       setColor(btn.dataset.color);
+    };
+  });
+  container.querySelectorAll('.kit-swatch').forEach(btn => {
+    btn.onclick = () => {
+      container.querySelectorAll('.kit-swatch').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      setKit(btn.dataset.kit);
     };
   });
 
@@ -134,6 +145,15 @@ function defaultRosterFrom(owned){
 function describeSkills(p){
   if (p.type === 'keeper') return `Alt${p.skills.altura} Vel${p.skills.velocidad} Vol${p.skills.volada} Sal${p.skills.salto}`;
   return `Fue${p.skills.fuerza} Pas${p.skills.pase} Pre${p.skills.precision} Tir${p.skills.tiro} Def${p.skills.defensa}`;
+}
+// Mismo look que fillPlayerCircle en js/game.js, pero como fondo CSS para la vista previa.
+function kitPreviewBackground(kitId, color){
+  switch(kitId){
+    case 'stripes': return `repeating-linear-gradient(90deg, ${color} 0 7px, #fff 7px 11px)`;
+    case 'sash': return `linear-gradient(128deg, ${color} 42%, #ffc94d 42% 54%, ${color} 54%)`;
+    case 'hoop': return `radial-gradient(circle, #fff 0 58%, ${color} 58% 100%)`;
+    default: return color;
+  }
 }
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

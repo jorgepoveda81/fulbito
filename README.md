@@ -85,6 +85,8 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 - Modo 1 jugador contra la PC, con 3 niveles de dificultad (Facil/Normal/Dificil) elegibles al armar el partido.
 - Nombres de equipo personalizables, sonido, vibracion en celular. Cada gol (en juego abierto o de penal) suma confeti, sacudida de camara, un golpe de zoom, un flash de color con el color del equipo y la red vibrando del lado donde entro el balon; cada patada larga suelta chispas cortas en el punto de impacto.
 - Menus, HUD del partido y panel de poderes con estilo de juego (degradados, sombras, botones con efecto de presion 3D) en vez de paneles planos tipo formulario.
+- Icono y logo propios (un aura dorada con la pelota, dibujado, no un emoji suelto) en el favicon, el icono instalable y el encabezado.
+- Patron de camiseta (solida/rayas/franja/aro) elegible en Mi Equipo junto al color, puramente cosmetico — nunca cambia una habilidad.
 - Tutorial de "Como se juega" la primera vez que alguien toca Jugar en ese celular (nunca mas despues, salvo borrar los datos del sitio).
 - Pantalla **Ajustes** (sonido/vibracion on-off) para cualquier jugador, separada de la pantalla de pruebas.
 - **Modo desarrollador** oculto: tocar el titulo "FULBITO" 5 veces seguidas muestra la pantalla de pruebas (ajustar en vivo los valores que el documento marca como "POR DEFINIR"). No aparece para un jugador comun.
@@ -105,6 +107,7 @@ Todo esta en JavaScript plano (sin frameworks ni paso de compilacion) y repartid
 2. **Sistema de tiro por 9 zonas** tal como lo describe la seccion 9, en vez del apuntado libre, si en algun momento lo prefieren.
 3. **Llevarlo a las tiendas de apps**: envolver esta misma pagina con [Capacitor](https://capacitorjs.com/) (`npx cap init`, `npx cap add android`, `npx cap add ios`) genera un proyecto nativo listo para Android Studio / Xcode sin reescribir el juego. Para publicarlo hace falta una cuenta de Google Play Console (pago unico) y/o Apple Developer Program (anual), mas las claves de firma.
 4. **Modo online**: jugar contra alguien en otro celular en vez de compartir la pantalla (Firebase ya deja la base puesta con Firestore, se podria usar para sincronizar la partida).
+5. **Identidad visual, fases 2 y 3** (la fase 1 — icono nuevo y patron de camiseta — ya esta hecha): aura cosmetica y brazalete de capitan, una pantalla "Crea tu club" con escudo propio (forma + colores + simbolo) que reemplace el nombre generico "EQUIPO A" en el marcador, y mas adelante tarjetas de figura por rareza y festejos de gol elegibles. Ninguna fase cambia una habilidad ni se vende con dinero real.
 
 ## Para ti, que sigues el proyecto
 

@@ -37,6 +37,7 @@ async function goPlay(){
   let colorA = (user && user.color) || DEFAULT_COLOR_A;
   if (colorA === DEFAULT_COLOR_B) colorA = DEFAULT_COLOR_A; // no pueden coincidir con el Equipo B
   window.FulbitoGame.setTeamColors({ A: colorA, B: DEFAULT_COLOR_B });
+  window.FulbitoGame.setTeamKits({ A: (user && user.kit) || 'solid', B: 'solid' });
 
   appHero.classList.add('hidden');
   appShell.classList.add('hidden');

@@ -1,7 +1,7 @@
 import { getFirebase, isFirebaseConfigured } from './firebase-init.js';
 import { coinsForResult } from './economy.js';
 
-let currentUser = null; // { uid, username, coins, wins, losses, draws, color, isAnonymous }
+let currentUser = null; // { uid, username, coins, wins, losses, draws, color, kit, isAnonymous }
 let status = 'loading'; // 'loading' | 'signedOut' | 'ready' | 'failed' | 'unconfigured'
 let lastError = '';
 const listeners = [];
@@ -32,7 +32,7 @@ async function loadOrCreateProfile(db, fsMod, user, extra){
   let snap = await fsMod.getDoc(ref);
   if (!snap.exists()){
     await fsMod.setDoc(ref, {
-      username: '', coins: 50, wins: 0, losses: 0, draws: 0, color: '#2f6fe0',
+      username: '', coins: 50, wins: 0, losses: 0, draws: 0, color: '#2f6fe0', kit: 'solid',
       createdAt: Date.now(), ...extra,
     });
     snap = await fsMod.getDoc(ref);
@@ -145,6 +145,17 @@ export async function setColor(color){
   const { db, fsMod } = fb;
   await fsMod.updateDoc(fsMod.doc(db, 'profiles', currentUser.uid), { color });
   currentUser.color = color;
+  notify();
+}
+
+// Patron de camiseta (solida/rayas/franja/aro): 100% cosmetico, ver TEAM_KIT_PATTERNS
+// en js/store-data.js y fillPlayerCircle en js/game.js. Mismo mecanismo que setColor.
+export async function setKit(kit){
+  const fb = await getFirebase();
+  if (!fb || !currentUser) return;
+  const { db, fsMod } = fb;
+  await fsMod.updateDoc(fsMod.doc(db, 'profiles', currentUser.uid), { kit });
+  currentUser.kit = kit;
   notify();
 }
 
