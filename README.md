@@ -1,5 +1,7 @@
 # FULBITO
 
+*Diseñado y trabajado por Migueloraptor14-SML.*
+
 Futbolin clasico evolucionado para celular: figuras fijas, auras de accion, un capitan movil, arquero, tiros, atajadas, VAR de posesion, zona fantasma, penales y 10 poderes tacticos.
 
 Basado en `docs/REGLAS_v1.0.md` (documento de reglas del proyecto).

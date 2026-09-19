@@ -18,6 +18,7 @@ function renderSettingsScreen(container){
         <span>&#128241; Vibracion</span>
       </label>
       <p class="creator-hint">Estos ajustes se guardan en este celular.</p>
+      <p class="app-credit">Diseñado y trabajado por Migueloraptor14-SML</p>
     </div>
   `;
   container.querySelector('#prefSound').onchange = e => window.FulbitoPrefs && window.FulbitoPrefs.setSound(e.target.checked);

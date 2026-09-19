@@ -2,6 +2,7 @@
   "name": "fulbito",
   "private": true,
   "description": "Futbolin evolucionado para celular. Sin build ni dependencias: los tests usan el test runner incluido en Node.",
+  "author": "Migueloraptor14-SML",
   "scripts": {
     "test": "node --test"
   }

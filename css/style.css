@@ -54,6 +54,7 @@ h1{
   cursor:default; -webkit-tap-highlight-color:transparent; user-select:none;
 }
 .subtitle{ color:var(--sub); font-size:13px; margin:4px 0 0; text-align:center; max-width:340px; }
+.app-credit{ color:var(--sub); opacity:0.6; font-size:11px; margin:6px 0 0; text-align:center; }
 
 #appShell{ width:100%; max-width:480px; display:flex; flex-direction:column; gap:12px; }
 .app-tabs{
