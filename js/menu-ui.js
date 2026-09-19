@@ -4,12 +4,12 @@ import { renderAuthGate } from './auth-ui.js';
 
 let showUpgradeGate = false; // true: invitado pidio crear cuenta / iniciar sesion, sin cerrar su sesion de invitado
 
-export function initHomeScreen(container, { onPlay }){
-  onAuthChange(() => renderHomeScreen(container, onPlay));
-  renderHomeScreen(container, onPlay);
+export function initHomeScreen(container, { onPlay, onPlayOnline }){
+  onAuthChange(() => renderHomeScreen(container, onPlay, onPlayOnline));
+  renderHomeScreen(container, onPlay, onPlayOnline);
 }
 
-function renderHomeScreen(container, onPlay){
+function renderHomeScreen(container, onPlay, onPlayOnline){
   const { status, error } = getAuthStatus();
 
   if (status === 'loading'){
@@ -53,11 +53,13 @@ function renderHomeScreen(container, onPlay){
       ${user.isAnonymous ? `<p class="creator-hint">Jugando de invitado. Si creas una cuenta con nombre+PIN, puedes volver a ella desde cualquier celular sin perder tu equipo.</p>` : ''}
     </div>
     <button class="reset-btn play-btn" id="homePlayBtn">&#9917; Jugar</button>
+    <button class="back-to-menu" id="homePlayOnlineBtn" style="text-align:center;">&#127760; Jugar online (con codigo de sala)</button>
     <div class="home-blurb">Elige tu equipo en <b>Mi Equipo</b> y suma jugadores nuevos en la <b>Tienda</b> jugando partidos.</div>
     <button class="back-to-menu" id="homeAccountBtn">${user.isAnonymous ? 'Crear cuenta / iniciar sesion' : 'Cerrar sesion (para que juegue otra persona)'}</button>
   `;
   container.querySelector('#homeUsername').onchange = e => setUsername(e.target.value.trim().slice(0,16));
   container.querySelector('#homePlayBtn').onclick = onPlay;
+  container.querySelector('#homePlayOnlineBtn').onclick = onPlayOnline;
   container.querySelector('#homeAccountBtn').onclick = () => {
     if (user.isAnonymous){ showUpgradeGate = true; renderHomeScreen(container, onPlay); }
     else signOutUser();

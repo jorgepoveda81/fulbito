@@ -428,6 +428,10 @@ function openPickerFor(team){
 psConfirm.onclick = () => {
   state.selectedPowers[pickingTeam] = tempPick.slice();
   psOverlay.classList.add('hidden');
+  if (state.mode === 'online'){
+    beginFormation(); // solo mi mitad: ver beginFormation/fbReady para el modo online
+    return;
+  }
   if (pickingTeam === 'A'){
     if (state.mode === 'vsAI'){
       // la PC elige sus 2 poderes sola, sin pantalla de espera
@@ -458,9 +462,15 @@ const matchSummaryBody = document.getElementById('matchSummaryBody');
 function beginFormation(){
   resetPlayers();
   state.phase = 'formation';
-  state.formingTeam = 'A';
+  if (state.mode === 'online'){
+    // cada quien arma solo su propio equipo, en su propio celular — el rival no ve nada de esto
+    state.formingTeam = onlineLocalTeam;
+    state.ghostZones[onlineLocalTeam] = placeGhostZone(onlineLocalTeam);
+  } else {
+    state.formingTeam = 'A';
+    state.ghostZones = { A: placeGhostZone('A'), B: placeGhostZone('B') }; // arrancan al azar, se pueden reubicar
+  }
   state.formationStep = 'players';
-  state.ghostZones = { A: placeGhostZone('A'), B: placeGhostZone('B') }; // arrancan al azar, se pueden reubicar
   ball.x = W/2; ball.y = H/2;
   formationBar.classList.remove('hidden');
   renderFormationBar();
@@ -490,6 +500,11 @@ fbReady.onclick = () => {
     saveFormation(state.formingTeam);
     state.formationStep = 'ghost';
     renderFormationBar();
+    return;
+  }
+  if (state.mode === 'online'){
+    formationBar.classList.add('hidden');
+    publishOnlineSetup();
     return;
   }
   if (state.formingTeam === 'A'){
@@ -610,7 +625,9 @@ function pointerUp(){
 // (pointerMove no distingue quien la mueve, asi que hay que frenarlo en el turno de la IA).
 function humanInputAllowed(){
   if (state.phase !== 'aiming' && state.phase !== 'flying') return true; // formacion, sorteo, etc.
-  return !(state.mode==='vsAI' && state.turnTeam==='B');
+  if (state.mode==='vsAI' && state.turnTeam==='B') return false;
+  if (state.mode==='online' && state.turnTeam!==onlineLocalTeam) return false; // no es mi turno: solo miro
+  return true;
 }
 canvas.addEventListener('mousedown', e=>{ if (humanInputAllowed()) pointerDown(e.clientX,e.clientY); });
 window.addEventListener('mousemove', e=>{ if (humanInputAllowed()) pointerMove(e.clientX,e.clientY); });
@@ -1156,16 +1173,23 @@ function finishPenalties(){
   document.getElementById('matchtime').textContent = 'FINAL';
   const winner = p.scoreA>p.scoreB ? 'Equipo A' : 'Equipo B';
   flashMessage('&#127942; Fin de los penales', `¡Gana ${winner}! (${p.scoreA} - ${p.scoreB})`, 500000);
-  notifyMatchEnd(p.scoreA>p.scoreB ? 'win' : 'loss'); // en penales no hay empate
+  notifyMatchEnd(p.scoreA, p.scoreB);
 }
-function notifyMatchEnd(resultForA){
+// En hotseat/vsAI el humano siempre es el Equipo A. En online cada celular controla un
+// equipo distinto (el anfitrion A, el invitado B) — ver onlineLocalTeam.
+function myLocalTeam(){ return onlineLocalTeam || 'A'; }
+function notifyMatchEnd(scoreA, scoreB){
   renderMatchSummary();
-  const statsForA = Object.values(matchStats).filter(s => s.team==='A' && s.ownedId);
-  if (window.FulbitoGame && window.FulbitoGame.onMatchEnd) window.FulbitoGame.onMatchEnd(resultForA, statsForA);
+  const myTeam = myLocalTeam();
+  const myScore = myTeam==='A' ? scoreA : scoreB, rivalScore = myTeam==='A' ? scoreB : scoreA;
+  const result = myScore>rivalScore ? 'win' : (rivalScore>myScore ? 'loss' : 'draw');
+  const statsForMe = Object.values(matchStats).filter(s => s.team===myTeam && s.ownedId);
+  if (window.FulbitoGame && window.FulbitoGame.onMatchEnd) window.FulbitoGame.onMatchEnd(result, statsForMe);
 }
 function renderMatchSummary(){
+  const myTeam = myLocalTeam();
   const rows = Object.values(matchStats)
-    .filter(s => s.team==='A' && (s.goals||s.shots||s.saves))
+    .filter(s => s.team===myTeam && (s.goals||s.shots||s.saves))
     .sort((a,b)=> b.goals-a.goals || b.shots-a.shots);
   if (!rows.length){ matchSummary.classList.add('hidden'); return; }
   matchSummaryBody.innerHTML = rows.map(s => {
@@ -1229,7 +1253,7 @@ function endMatch(){
   document.getElementById('matchtime').textContent = 'FINAL';
   const winner = state.scoreA>state.scoreB ? 'Equipo A' : (state.scoreB>state.scoreA ? 'Equipo B' : 'Empate');
   flashMessage('&#127942; Fin del partido', winner==='Empate' ? 'Empate' : `¡Gana ${winner}!`, 500000);
-  notifyMatchEnd(state.scoreA>state.scoreB ? 'win' : (state.scoreB>state.scoreA ? 'loss' : 'draw'));
+  notifyMatchEnd(state.scoreA, state.scoreB);
 }
 
 // ============================================================================
@@ -1621,6 +1645,7 @@ function loop(now){
   }
 
   if (state.mode==='vsAI'){ updateAI(dt); aiConsiderDefense(); }
+  if (state.mode==='online') maybePublishOnline();
   updateConfetti(dt);
   updateKickSparks(dt);
   updateShake(dt);
@@ -1935,6 +1960,117 @@ function applyMatchState(s){
   renderPowerButtons();
 }
 
+// ---------- Conexion y sincronizacion del modo online ----------
+let onlineRoomCode = null;
+let onlineLocalTeam = null; // 'A' (anfitrion) | 'B' (invitado) — convencion fija de las salas
+let onlineUnwatch = null;
+let onlineSeq = 0;
+let onlineLastPublishedKey = null;
+let onlineMatchStarting = false;
+
+function onlineStableKey(){
+  return [state.phase, state.turnTeam, state.formingTeam, state.formationStep,
+          state.scoreA, state.scoreB, Math.floor(state.matchTimeLeft),
+          state.holder ? statKey(state.holder) : '-'].join('|');
+}
+function onlineIsLocalActorTurn(){
+  const actor = state.phase==='formation' ? state.formingTeam : state.turnTeam;
+  return actor === onlineLocalTeam;
+}
+// Llamado cada frame desde loop(): publica el estado en Firestore solo cuando el partido
+// llega a un punto de decision NUEVO (apuntando/formacion/penal/gol/fin) y le toca actuar
+// a este celular — nunca a mitad de vuelo del balon, para no mandar decenas de escrituras
+// por segundo.
+function maybePublishOnline(){
+  if (state.mode !== 'online' || !onlineRoomCode) return;
+  const stable = state.phase==='aiming' || state.phase==='formation' || state.phase==='penaltySetup'
+              || state.phase==='goalPause' || state.phase==='ended';
+  if (!stable) return;
+  if (state.phase !== 'ended' && !onlineIsLocalActorTurn()) return;
+  const key = onlineStableKey();
+  if (key === onlineLastPublishedKey) return;
+  onlineLastPublishedKey = key;
+  onlineSeq += 1;
+  window.FulbitoOnline.publishRoomState(onlineRoomCode, onlineSeq, serializeMatchState());
+}
+// Termine de elegir mis poderes y armar mi formacion: publico mi mitad y espero al rival.
+function publishOnlineSetup(){
+  const team = onlineLocalTeam;
+  const setup = {
+    selectedPowers: state.selectedPowers[team],
+    formation: state.formation[team],
+    ghostZone: { x: state.ghostZones[team].x, y: state.ghostZones[team].y },
+  };
+  flashMessage('Listo', 'Esperando a que tu rival termine de armar su equipo...', 500000);
+  window.FulbitoOnline.publishSetup(onlineRoomCode, onlineLocalTeam==='A' ? 'host' : 'guest', setup);
+}
+// Solo lo corre el anfitrion, una vez que aparecen las dos mitades: arma el partido completo
+// (mismo startMatch() de siempre) y publica el primer turno para que el invitado lo reciba.
+function beginOnlineMatchFromSetups(hostSetup, guestSetup){
+  msgOverlay.classList.remove('show'); // saca el "esperando a tu rival"
+  state.selectedPowers = { A: hostSetup.selectedPowers, B: guestSetup.selectedPowers };
+  state.formation = { A: hostSetup.formation, B: guestSetup.formation };
+  resetPlayers();
+  state.ghostZones = {
+    A: { x: hostSetup.ghostZone.x, y: hostSetup.ghostZone.y, revealed:false, team:'A' },
+    B: { x: guestSetup.ghostZone.x, y: guestSetup.ghostZone.y, revealed:false, team:'B' },
+  };
+  startMatch();
+  onlineSeq = 1;
+  onlineLastPublishedKey = onlineStableKey();
+  window.FulbitoOnline.publishRoomState(onlineRoomCode, onlineSeq, serializeMatchState());
+}
+function onOnlineRoomUpdate(room){
+  if (!room){
+    flashMessage('Sala cerrada', 'Tu rival se desconecto', 3000);
+    return;
+  }
+  if (!room.snapshot){
+    // Todavia no arranco el partido: esperando a que las dos mitades del armado esten listas.
+    if (onlineLocalTeam==='A' && room.hostSetup && room.guestSetup && !onlineMatchStarting){
+      onlineMatchStarting = true;
+      beginOnlineMatchFromSetups(room.hostSetup, room.guestSetup);
+    }
+    return;
+  }
+  if (room.seq <= onlineSeq) return; // es mi propio ultimo envio, o algo viejo
+  onlineSeq = room.seq;
+  applyMatchState(room.snapshot);
+  onlineLastPublishedKey = onlineStableKey(); // no volver a publicar lo que acabo de recibir
+  msgOverlay.classList.remove('show'); // saca el "esperando a tu rival" si seguia puesto
+}
+// Llamado desde la pantalla de conexion (js/online-ui.js) una vez que el anfitrion y el
+// invitado ya estan los dos en la sala. room trae los nombres/colores/kits ya elegidos.
+function startOnlineSetup(room, isHost){
+  onlineRoomCode = room.code;
+  onlineLocalTeam = isHost ? 'A' : 'B';
+  onlineSeq = 0; onlineLastPublishedKey = null; onlineMatchStarting = false;
+  state.mode = 'online';
+  state.teamNames = {
+    A: (room.hostName || 'ANFITRION').toUpperCase().slice(0,16),
+    B: (room.guestName || 'INVITADO').toUpperCase().slice(0,16),
+  };
+  document.getElementById('tagAName').textContent = state.teamNames.A;
+  document.getElementById('tagBName').textContent = state.teamNames.B;
+  window.FulbitoGame.setTeamColors({ A: room.hostColor || '#2f6fe0', B: room.guestColor || '#e0432f' });
+  window.FulbitoGame.setTeamKits({ A: room.hostKit || 'solid', B: room.guestKit || 'solid' });
+  document.querySelector('.app-hero').classList.add('hidden');
+  document.getElementById('appShell').classList.add('hidden');
+  document.getElementById('gameRoot').classList.remove('hidden');
+  if (onlineUnwatch) onlineUnwatch();
+  onlineUnwatch = window.FulbitoOnline.watchRoom(onlineRoomCode, onOnlineRoomUpdate);
+  maybeShowTutorial(() => {
+    pickingTeam = onlineLocalTeam; tempPick = [];
+    openPickerFor(onlineLocalTeam);
+  });
+}
+function leaveOnlineIfActive(){
+  if (state.mode !== 'online') return;
+  if (onlineUnwatch){ onlineUnwatch(); onlineUnwatch = null; }
+  if (onlineRoomCode) window.FulbitoOnline.leaveRoom(onlineRoomCode);
+  onlineRoomCode = null; onlineLocalTeam = null;
+}
+
 window.FulbitoGame = {
   // roster: arreglo de 7 {skills, name} (arquero, def, def, mid, mid, fwd, capitan) o null para volver al preset por defecto
   setPlayerRoster(roster){ rosterOverrideA = roster; },
@@ -1953,9 +2089,11 @@ window.FulbitoGame = {
     rosterOverrideB = null; teamColorFromLookupB = null; nameBStatus.textContent = '';
     mainMenuOverlay.classList.remove('hidden');
   },
-  // Usados por el modo online (ver js/online-repo.js) para guardar/retomar el partido.
+  // Usados por el modo online (ver js/online-repo.js y js/online-ui.js).
   serializeMatchState,
   applyMatchState,
+  startOnlineSetup,
+  leaveOnlineIfActive,
 };
 
 resetPlayers();

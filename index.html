@@ -41,6 +41,26 @@
   <section id="tabSettings" class="app-screen hidden"></section>
 </div>
 
+<div class="power-select-overlay hidden" id="onlineOverlay">
+  <div class="power-select-box">
+    <h2>&#127760; Jugar online</h2>
+    <p class="ps-sub" id="onlineIntro">Crea una sala y comparte el codigo con tu rival, o entra con el codigo que te paso.</p>
+    <div class="ps-grid" id="onlineChoiceGrid">
+      <button type="button" class="ps-card" id="onlineCreateBtn"><b>&#127959;&#65039; Crear sala</b><span>Te da un codigo para compartir.</span></button>
+      <button type="button" class="ps-card" id="onlineJoinBtn"><b>&#128273; Unirme con un codigo</b><span>Tu rival ya creo la sala.</span></button>
+    </div>
+    <div class="name-inputs hidden" id="onlineJoinForm">
+      <div class="name-field" style="flex:1;">
+        <label for="onlineCodeInput">Codigo de la sala</label>
+        <input type="text" id="onlineCodeInput" maxlength="5" placeholder="ABCDE" style="text-transform:uppercase;letter-spacing:2px;">
+      </div>
+    </div>
+    <div id="onlineStatus" class="ps-sub" style="min-height:18px;"></div>
+    <button class="reset-btn hidden" id="onlineActionBtn">Unirme</button>
+    <button class="back-to-menu" id="onlineCancelBtn" style="margin-top:10px;">Cancelar</button>
+  </div>
+</div>
+
 <div id="gameRoot" class="hidden">
 <div class="game-topbar">
   <button class="back-to-menu" id="backToMenu">&#8592; Menu</button>
@@ -145,7 +165,7 @@
 </div>
 
 <div class="formation-bar hidden" id="matchSummary">
-  <div class="fb-title">&#128202; Resumen del partido (Equipo A)</div>
+  <div class="fb-title">&#128202; Resumen del partido (tu equipo)</div>
   <div id="matchSummaryBody" class="summary-body"></div>
 </div>
 

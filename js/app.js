@@ -6,6 +6,8 @@ import { initTeamScreen, buildRosterOverride } from './team-ui.js';
 import { initStoreScreen } from './store-ui.js';
 import { initSettingsScreen } from './settings-ui.js';
 import { addCareerStats, lookupPublicAccount } from './player-repo.js';
+import { openOnlineOverlay } from './online-ui.js';
+import { watchRoom, publishRoomState, publishSetup, leaveRoom } from './online-repo.js';
 
 const DEFAULT_COLOR_A = '#2f6fe0';
 const DEFAULT_COLOR_B = '#e0432f'; // color de arranque del Equipo B; si en modo 2 jugadores se encuentra
@@ -45,12 +47,13 @@ async function goPlay(){
   window.FulbitoGame.showModeMenu();
 }
 document.getElementById('backToMenu').onclick = () => {
+  window.FulbitoGame.leaveOnlineIfActive();
   gameRoot.classList.add('hidden');
   appHero.classList.remove('hidden');
   appShell.classList.remove('hidden');
 };
 
-initHomeScreen(screens.home, { onPlay: goPlay });
+initHomeScreen(screens.home, { onPlay: goPlay, onPlayOnline: openOnlineOverlay });
 initTeamScreen(screens.team);
 initStoreScreen(screens.store);
 initSettingsScreen(screens.settings);
@@ -79,13 +82,18 @@ initSettingsScreen(screens.settings);
   });
 })();
 
-window.FulbitoGame.onMatchEnd = (result, statsForA) => {
+window.FulbitoGame.onMatchEnd = (result, myStats) => {
   recordMatchResult(result);
-  if (statsForA && statsForA.length) addCareerStats(statsForA);
+  if (myStats && myStats.length) addCareerStats(myStats);
 };
 
 // Bridge para que el selector de "Jugador 2" (dentro de js/game.js, un script comun sin
 // import) pueda buscar cuentas por nombre sin tener acceso directo a Firestore.
 window.FulbitoAccounts = { lookupPlayer2: lookupPublicAccount };
+
+// Bridge para el modo online (ver js/online-repo.js y startOnlineSetup en js/game.js):
+// game.js no puede hacer `import` (es un script comun), asi que llama a Firestore a
+// traves de esta puerta, igual que ya hace con FulbitoAccounts.
+window.FulbitoOnline = { watchRoom, publishRoomState, publishSetup, leaveRoom };
 
 initAuth();

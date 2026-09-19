@@ -89,6 +89,19 @@ export async function publishRoomState(code, seq, snapshot){
   } catch(e){ /* conexion o permisos: el jugador vera que no avanzo y puede reintentar */ }
 }
 
+// Guarda la mitad de cada jugador (sus 2 poderes + su formacion + su zona fantasma) antes
+// de que arranque el partido: cada quien arma la suya en su propio celular, sin que el
+// rival la vea hasta que las dos mitades esten listas (ver beginOnlineMatchFromSetups en game.js).
+export async function publishSetup(code, role, setup){
+  const fb = await getFirebase();
+  if (!fb) return;
+  const { db, fsMod } = fb;
+  const field = role === 'host' ? 'hostSetup' : 'guestSetup';
+  try {
+    await fsMod.updateDoc(fsMod.doc(db, 'onlineRooms', code), { [field]: setup, updatedAt: Date.now() });
+  } catch(e){ /* conexion o permisos: el jugador vera que sigue esperando y puede reintentar */ }
+}
+
 // El anfitrion cierra la sala (se borra), o el invitado se retira (libera su lugar).
 export async function leaveRoom(code){
   const fb = await getFirebase();
